@@ -31,7 +31,11 @@ async def root():
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={"error": None}
+    )
 
 
 @app.post("/login", response_class=HTMLResponse)
@@ -43,10 +47,11 @@ async def login(
 ):
     user = db.query(models.User).filter(models.User.username == username).first()
     if not user or user.hashed_password != password:
-        return templates.TemplateResponse("login.html", {
-            "request": request,
-            "error": "Неверный логин или пароль"
-        })
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={"error": "Неверный логин или пароль"}
+        )
 
     response = RedirectResponse(url="/schedule", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="user", value=user.username)
@@ -60,6 +65,19 @@ async def logout():
     return response
 
 
+@app.get("/profile", response_class=HTMLResponse)
+async def profile(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user_from_cookie(request, db)
+    if not user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="profile.html",
+        context={"user": user, "teacher_name": user.full_name}
+    )
+
+
 @app.get("/schedule", response_class=HTMLResponse)
 async def get_schedule(request: Request, db: Session = Depends(get_db)):
     user = get_current_user_from_cookie(request, db)
@@ -69,7 +87,8 @@ async def get_schedule(request: Request, db: Session = Depends(get_db)):
         request=request,
         name="schedule.html",
         context={
-            "teacher_name": user.full_name if user else "Гость"
+            "teacher_name": user.full_name if user else "Гость",
+            "tasks": tasks
         }
     )
 
@@ -120,15 +139,17 @@ async def delete_lesson(
 @app.get("/students", response_class=HTMLResponse)
 async def get_students(request: Request, db: Session = Depends(get_db)):
     user = get_current_user_from_cookie(request, db)
-    # Загружаем учеников вместе с их оценками
     students = db.query(models.Student).options(joinedload(models.Student.grades)).all()
 
-    return templates.TemplateResponse("students.html", {
-        "request": request,
-        "students": students,
-        "is_teacher": bool(user),
-        "teacher_name": user.full_name if user else "Гость"
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="students.html",
+        context={
+            "students": students,
+            "is_teacher": bool(user),
+            "teacher_name": user.full_name if user else "Гость"
+        }
+    )
 
 
 @app.post("/students/add")

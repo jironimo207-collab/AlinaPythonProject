@@ -65,14 +65,13 @@ async def get_schedule(request: Request, db: Session = Depends(get_db)):
     user = get_current_user_from_cookie(request, db)
     tasks = db.query(models.Task).all()
 
-    return templates.TemplateResponse("schedule.html", {
-        "request": request,
-        "tasks": tasks,
-        "days_of_week": DAYS_OF_WEEK,
-        "time_slots": TIME_SLOTS,
-        "is_teacher": bool(user),
-        "teacher_name": user.full_name if user else "Гость"
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="schedule.html",
+        context={
+            "teacher_name": user.full_name if user else "Гость"
+        }
+    )
 
 
 @app.post("/schedule/add")

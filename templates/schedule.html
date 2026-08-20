@@ -6,52 +6,73 @@
     <title>GL STUDY — Расписание</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { display: flex; background-color: #f4f6f9; color: #333; height: 100vh; }
+        body { display: flex; background-color: #f4f6f9; color: #333; min-height: 100vh; flex-direction: row; }
 
-        .sidebar { width: 220px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; }
-        .logo { padding: 20px; font-size: 24px; font-weight: bold; color: #7b2cbf; border-bottom: 1px solid #eee; }
+        /* Sidebar Styles */
+        .sidebar { width: 220px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s ease; }
+        .logo { padding: 20px; font-size: 24px; font-weight: bold; color: #7b2cbf; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .logo span { color: #3a0ca3; }
         .menu { list-style: none; padding-top: 10px; }
         .menu li a { display: flex; align-items: center; padding: 12px 20px; color: #555; text-decoration: none; font-size: 14px; }
         .menu li.active a { background: #f0f0f5; color: #7b2cbf; font-weight: bold; border-left: 4px solid #7b2cbf; }
 
-        .main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
-        .header { height: 60px; background: #fff; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between; padding: 0 25px; }
-        .user-info { display: flex; align-items: center; gap: 15px; font-size: 14px; }
+        /* Main Content Styles */
+        .main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow-y: auto; }
+        .header { height: 60px; background: #fff; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        .header-title { display: flex; align-items: center; gap: 10px; }
+        .menu-toggle { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: #7b2cbf; }
+
+        .user-info { display: flex; align-items: center; gap: 10px; font-size: 14px; }
         .user-avatar { width: 35px; height: 35px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
         .content { padding: 20px; }
         .page-title { font-size: 20px; font-weight: 500; margin-bottom: 15px; color: #444; }
 
-        .filter-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .filter-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; flex-wrap: wrap; }
         .filter-title { font-size: 12px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 10px; }
-        .btn-primary { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block; }
+        .btn-primary { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block; white-space: nowrap; }
 
-        /* Блок Легенды Цветов */
+        /* Legend Box */
         .legend-box { background: #fcfcfc; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px 15px; font-size: 12px; color: #555; }
         .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
         .legend-item:last-child { margin-bottom: 0; }
-        .color-dot { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+        .color-dot { width: 14px; height: 14px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
 
-        .schedule-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; }
+        /* Schedule Table Mobile Scroll Container */
+        .table-wrapper { width: 100%; overflow-x: auto; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; }
+        .schedule-table { width: 100%; border-collapse: collapse; min-width: 700px; }
         .schedule-table th, .schedule-table td { border: 1px solid #e0e0e0; padding: 10px; text-align: center; vertical-align: top; }
         .schedule-table th { background: #fafafa; font-size: 13px; color: #555; }
         .day-header { font-weight: bold; text-align: left; background: #fafafa; width: 120px; vertical-align: middle; }
 
-        .lesson-card { color: white; padding: 8px; border-radius: 4px; font-size: 12px; text-align: left; margin-bottom: 5px; position: relative; padding-right: 20px; }
+        .lesson-card { color: white; padding: 8px; border-radius: 4px; font-size: 12px; text-align: left; margin-bottom: 5px; position: relative; padding-right: 20px; word-break: break-word; }
         .delete-btn { position: absolute; top: 4px; right: 4px; background: none; border: none; color: white; cursor: pointer; font-weight: bold; font-size: 12px; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px; }
+        /* Modal Styles */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; padding: 15px; }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 13px; margin-bottom: 5px; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+
+        /* Mobile Responsive Breakpoints */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { position: fixed; top: 0; left: -220px; height: 100vh; z-index: 999; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+            .sidebar.active { transform: translateX(220px); }
+            .menu-toggle { display: block; }
+            .filter-card { flex-direction: column; align-items: stretch; }
+            .legend-box { width: 100%; }
+            .content { padding: 15px; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="logo">GL <span>STUDY</span></div>
+    <div class="sidebar" id="sidebar">
+        <div class="logo">
+            GL <span>STUDY</span>
+        </div>
         <ul class="menu">
             <li class="active"><a href="/schedule">Моё расписание</a></li>
             <li><a href="/students">Ученики</a></li>
@@ -60,20 +81,23 @@
 
     <div class="main">
         <div class="header">
-            <div><strong>Расписание занятий</strong></div>
+            <div class="header-title">
+                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                <strong>Расписание занятий</strong>
+            </div>
             <div class="user-info">
                 {% if is_teacher %}
                     <div class="user-avatar">👤</div>
-                    <span>{{ teacher_name }}</span>
-                    <a href="/logout" style="color: #dc3545; text-decoration: none; margin-left: 10px;">Выйти</a>
+                    <span style="display: none; @media(min-width: 480px){display: inline;}">{{ teacher_name }}</span>
+                    <a href="/logout" style="color: #dc3545; text-decoration: none; margin-left: 5px;">Выйти</a>
                 {% else %}
-                    <a href="/login" class="btn-primary">Вход для учителя</a>
+                    <a href="/login" class="btn-primary">Вход</a>
                 {% endif %}
             </div>
         </div>
 
         <div class="content">
-            <div class="page-title">Расписание преподавателя: {{ teacher_name }}</div>
+            <div class="page-title">Преподаватель: {{ teacher_name }}</div>
 
             <div class="filter-card">
                 <div>
@@ -87,7 +111,6 @@
                     </div>
                 </div>
 
-                <!-- Легенда статусов -->
                 <div class="legend-box">
                     <div class="legend-item"><span class="color-dot" style="background: #a29bfe;"></span> Текущие занятия</div>
                     <div class="legend-item"><span class="color-dot" style="background: #ff7675;"></span> Занятия закончатся в течение недели</div>
@@ -97,41 +120,43 @@
                 </div>
             </div>
 
-            <table class="schedule-table">
-                <thead>
-                    <tr>
-                        <th>День / Время</th>
-                        {% for slot in time_slots %}
-                            <th>{{ slot }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for day in days_of_week %}
+            <div class="table-wrapper">
+                <table class="schedule-table">
+                    <thead>
                         <tr>
-                            <td class="day-header">{{ day }}</td>
+                            <th>День / Время</th>
                             {% for slot in time_slots %}
-                                <td>
-                                    {% for task in tasks %}
-                                        {% if day in task.due_date and slot in task.due_date %}
-                                            <div class="lesson-card" style="background-color: {{ task.color or '#a29bfe' }};">
-                                                <strong>{{ task.title }}</strong><br>
-                                                <small>{{ task.description or '' }}</small>
-
-                                                {% if is_teacher %}
-                                                    <form action="/schedule/delete/{{ task.id }}" method="post" style="display:inline;">
-                                                        <button type="submit" class="delete-btn" onclick="return confirm('Удалить этот урок?')">✕</button>
-                                                    </form>
-                                                {% endif %}
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                </td>
+                                <th>{{ slot }}</th>
                             {% endfor %}
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for day in days_of_week %}
+                            <tr>
+                                <td class="day-header">{{ day }}</td>
+                                {% for slot in time_slots %}
+                                    <td>
+                                        {% for task in tasks %}
+                                            {% if day in task.due_date and slot in task.due_date %}
+                                                <div class="lesson-card" style="background-color: {{ task.color or '#a29bfe' }};">
+                                                    <strong>{{ task.title }}</strong><br>
+                                                    <small>{{ task.description or '' }}</small>
+
+                                                    {% if is_teacher %}
+                                                        <form action="/schedule/delete/{{ task.id }}" method="post" style="display:inline;">
+                                                            <button type="submit" class="delete-btn" onclick="return confirm('Удалить этот урок?')">✕</button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -182,6 +207,7 @@
     </div>
 
     <script>
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
         function openModal() { document.getElementById('lessonModal').style.display = 'flex'; }
         function closeModal() { document.getElementById('lessonModal').style.display = 'none'; }
     </script>

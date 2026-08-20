@@ -124,21 +124,26 @@ async def delete_task(
 
 # --- УЧЕНИКИ ---
 
+# --- УЧЕНИКИ ---
 @app.get("/students")
 async def get_students(request: Request, db: Session = Depends(get_db)):
+    # Проверяем, авторизован ли учитель
+    if not is_teacher(request):
+        # Если не учитель, перенаправляем на страницу авторизации
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
     students = []
-    if hasattr(models, "Student"):
-        try:
-            students = db.query(models.Student).all()
-        except Exception:
-            students = []
+    try:
+        students = db.query(models.Student).all()
+    except Exception:
+        students = []
 
     return templates.TemplateResponse(
         request=request,
         name="students.html",
         context={
             "students": students,
-            "is_teacher": is_teacher(request),
+            "is_teacher": True,
             "teacher_name": request.session.get("user_name", "Фурсова Алина Евгеньевна")
         }
     )
@@ -148,19 +153,34 @@ async def get_students(request: Request, db: Session = Depends(get_db)):
 async def add_student(
     request: Request,
     name: str = Form(...),
-    info: Optional[str] = Form(None),
+    age: Optional[str] = Form(None),
+    branch: Optional[str] = Form("Рудный"),
+    category: Optional[str] = Form(None),
+    subject: Optional[str] = Form(None),
+    group_name: Optional[str] = Form(None),
+    request_date: Optional[str] = Form(None),
+    visit_date: Optional[str] = Form(None),
+    contacts: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
     if not is_teacher(request):
         raise HTTPException(status_code=403, detail="Доступ только для учителя")
 
-    if hasattr(models, "Student"):
-        new_student = models.Student(name=name, info=info)
-        db.add(new_student)
-        db.commit()
+    new_student = models.Student(
+        name=name,
+        age=age,
+        branch=branch,
+        category=category,
+        subject=subject,
+        group_name=group_name,
+        request_date=request_date,
+        visit_date=visit_date,
+        contacts=contacts
+    )
+    db.add(new_student)
+    db.commit()
 
     return RedirectResponse(url="/students", status_code=status.HTTP_303_SEE_OTHER)
-
 
 @app.post("/students/delete/{student_id}")
 async def delete_student(

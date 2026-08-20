@@ -69,7 +69,7 @@ setuptools==82.0.1
 six==1.17.0
 smbus==1.1
 soupsieve==2.8.4
-TBB @ file:///build/onetbb/src/build/python/python_build
+tbb==2021.13.1
 tinycss2==1.5.1
 typing_extensions==4.15.0
 ufw==0.36.2

@@ -116,11 +116,11 @@ async def profile(request: Request, db: Session = Depends(get_db)):
         context={"user": user, "teacher_name": user.full_name}
     )
 
-
 @app.get("/schedule", response_class=HTMLResponse)
 async def get_schedule(request: Request, db: Session = Depends(get_db)):
     user = get_current_user_from_cookie(request, db)
     tasks = db.query(models.Task).all()
+    students = db.query(models.Student).all()  # Получаем список учеников
 
     return templates.TemplateResponse(
         request=request,
@@ -130,11 +130,11 @@ async def get_schedule(request: Request, db: Session = Depends(get_db)):
             "is_teacher": bool(user),
             "teacher_name": user.full_name if user else "Гость",
             "tasks": tasks,
+            "students": students,  # Передаем список в шаблон
             "days": DAYS_OF_WEEK,
             "time_slots": TIME_SLOTS
         }
     )
-
 
 @app.post("/schedule/add")
 async def add_lesson(

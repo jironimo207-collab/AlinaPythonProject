@@ -144,12 +144,16 @@ async def add_lesson(
         time_slot: str = Form(...),
         color: str = Form(...),
         description: str = Form(None),
+        student_id: int = Form(None),
+        score: int = Form(None),
+        descriptor: str = Form(None),
         db: Session = Depends(get_db)
 ):
     user = get_current_user_from_cookie(request, db)
     if not user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
+    # 1. Сохраняем занятие в расписание
     due_date = f"{day} {time_slot}"
     new_task = models.Task(
         title=title,
@@ -158,9 +162,20 @@ async def add_lesson(
         color=color
     )
     db.add(new_task)
+
+    # 2. Если выставили оценку ученику — сохраняем её в базу оценок
+    if student_id and score is not None:
+        grade_entry = models.Grade(
+            student_id=student_id,
+            test_name=title,  # Название занятия
+            score=score,
+            max_score=100,
+            descriptor=descriptor
+        )
+        db.add(grade_entry)
+
     db.commit()
     return RedirectResponse(url="/schedule", status_code=status.HTTP_303_SEE_OTHER)
-
 
 @app.post("/schedule/delete/{task_id}")
 async def delete_lesson(

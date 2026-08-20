@@ -5,3 +5,4 @@ sqlalchemy
 requests
 pydantic
 python-dotenv
+itsdangerous

@@ -7,3 +7,4 @@ pydantic
 python-dotenv
 itsdangerous
 python-multipart
+starlette<0.36.0

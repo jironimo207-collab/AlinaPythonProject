@@ -80,12 +80,11 @@
                                     <th style="width: 40px;" class="ps-3"><input type="checkbox" id="checkAll"></th>
                                     <th>ФИО</th>
                                     <th>Возраст</th>
+                                    <th>Оценки / Тесты</th>
                                     <th>Филиалы</th>
                                     <th>Категория</th>
                                     <th>Дисциплины</th>
                                     <th>Группа</th>
-                                    <th>Дата обращения</th>
-                                    <th>Дата визита</th>
                                     <th>Контакты</th>
                                     {% if is_teacher %}<th class="text-end pe-3">Действия</th>{% endif %}
                                 </tr>
@@ -97,25 +96,100 @@
                                         <td class="ps-3"><input type="checkbox"></td>
                                         <td><strong>{{ student.name }}</strong></td>
                                         <td>{{ student.age or '—' }}</td>
+                                        <td>
+                                            {% if student.grades %}
+                                                <button class="btn btn-sm btn-light border position-relative" data-bs-toggle="modal" data-bs-target="#viewGradesModal{{ student.id }}">
+                                                    📊 {{ student.grades[-1].score }}/{{ student.grades[-1].max_score }}
+                                                    <span class="badge bg-secondary ms-1">{{ student.grades|length }}</span>
+                                                </button>
+                                            {% else %}
+                                                <span class="text-muted small">Нет оценок</span>
+                                            {% endif %}
+                                        </td>
                                         <td><span class="badge bg-info text-dark">{{ student.branch or 'Рудный' }}</span></td>
                                         <td>{{ student.category or '—' }}</td>
                                         <td>{{ student.subject or '—' }}</td>
                                         <td>{{ student.group_name or '—' }}</td>
-                                        <td>{{ student.request_date or '—' }}</td>
-                                        <td>{{ student.visit_date or '—' }}</td>
                                         <td>{{ student.contacts or '—' }}</td>
                                         {% if is_teacher %}
                                         <td class="text-end pe-3">
+                                            <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#addGradeModal{{ student.id }}">
+                                                + Оценка
+                                            </button>
                                             <form action="/students/delete/{{ student.id }}" method="post" class="d-inline" onsubmit="return confirm('Удалить ученика?');">
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
                                             </form>
                                         </td>
                                         {% endif %}
                                     </tr>
+
+                                    <!-- Модальное окно просмотра оценок -->
+                                    <div class="modal fade text-start" id="viewGradesModal{{ student.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">История оценок: {{ student.name }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    {% if student.grades %}
+                                                        <ul class="list-group">
+                                                            {% for grade in student.grades %}
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <strong>{{ grade.test_name }}</strong>
+                                                                        <br><small class="text-muted">{{ grade.created_at.strftime('%d.%m.%Y %H:%M') if grade.created_at else '' }}</small>
+                                                                    </div>
+                                                                    <span class="badge bg-primary rounded-pill fs-6">{{ grade.score }} / {{ grade.max_score }}</span>
+                                                                </li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    {% else %}
+                                                        <p class="text-center text-muted m-0">Оценок пока нет</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Модальное окно добавления оценки -->
+                                    {% if is_teacher %}
+                                    <div class="modal fade text-start" id="addGradeModal{{ student.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Выставить оценку: {{ student.name }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <form action="/students/{{ student.id }}/grades/add" method="post">
+                                                    <div class="modal-body row g-3">
+                                                        <div class="col-12">
+                                                            <label class="form-label">Название теста / Работа</label>
+                                                            <input type="text" name="test_name" class="form-control" placeholder="Контрольный тест #1" required>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label class="form-label">Набранный балл</label>
+                                                            <input type="number" name="score" class="form-control" placeholder="85" min="0" required>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label class="form-label">Макс. балл</label>
+                                                            <input type="number" name="max_score" class="form-control" value="100" min="1" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                                                        <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
                                     {% endfor %}
                                 {% else %}
                                     <tr>
-                                        <td colspan="11" class="text-center text-muted py-4">Ученики не найдены</td>
+                                        <td colspan="10" class="text-center text-muted py-4">Ученики не найдены</td>
                                     </tr>
                                 {% endif %}
                             </tbody>
@@ -126,7 +200,7 @@
         </div>
     </div>
 
-    <!-- Модальное окно -->
+    <!-- Модальное окно добавления ученика -->
     <div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">

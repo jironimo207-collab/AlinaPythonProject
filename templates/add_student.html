@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="Cache-Control" content="no-cache, must-revalidate"/>
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Ученики</title>
+    <link rel="shortcut icon" type="image/png" href="/Content/themes/nwds/Images/Logos/favicon.png"/>
+    <link href="/Content/Bootstrap/Bootstrap?v=E4knbFa4qpqVwI_IWMtS_Yk_uJdybFZywiJPg3HbQF01" rel="stylesheet"/>
+    <link href="/Content/FontAwesome/FontAwesome?v=O2o5x3RT1U9Gq1q0HjQVUdJ_mJbjuaveFI_MQa_q1DA1" rel="stylesheet"/>
+    <link href="/Content/themes/nwds/Main?v=rcA7voeDGIjnFp_-bN0aN72jLKrkuAhsnTcOj0xyL0s1" rel="stylesheet"/>
+    <link href="/Content/themes/nwds/Common?v=2WynjHGAIkfJ14gwd7fx9vXD1-5rrFQnUeB6A51YkLg1" rel="stylesheet"/>
+    <link href="/Content/themes/nwds/Layout/Layout?v=ETZNbnAFUqyqHMKb80NNoPxeKnWdMA7kLJhiKEXlcrA1" rel="stylesheet"/>
+    <link href="/Content/themes/nwds/Forms?v=QI4UBsQK7T1sdVsl7ni0vp4dt1WeDPkleqs2cM1ka8g1" rel="stylesheet"/>
+    <link href="/Content/themes/nwds/Cards?v=Y1mhYkY1Vf5JzHE6Xf8ZGeGsE-gn06vFdrnMsVqBlt41" rel="stylesheet"/>
+    <link href="/Content/themes/nwds/Tables?v=1fiNx5AQqdNaB5kmT_o9W6fdc3y42hV0PbFPXBWx07E1" rel="stylesheet"/>
+    <script src="/Scripts/JQueryNwds?v=c7DEHX8d5vdL1G2g2ticYx2R6m5Vn4b0GkSimyhjoCs1"></script>
+    <script src="/Scripts/Bootstrap?v=TF-Qkr_JTLYNiVi2ggSbspdJzlIY6TYJLv6nbDnR8uE1"></script>
+</head>
+<body>
+<div id="mainDiv">
+    <header>
+        <div class="LogoBlock">
+            <a href="/Profile" class="navbar-brand">
+                <span class="Logo"><img src="/Files/grandluxe.t8s.ru/Photos/kbb3sli2.pp0.png" alt="Грандлюкс" style="height: 34px;" /></span>
+            </a>
+        </div>
+        <div class="navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li><a id="aToggleAside" href="#"><i class="fa fa-bars"></i></a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown DropDownCornerMenu">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <span>Фурсова Алина</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </header>
+
+    <aside>
+        <ul class="nav">
+            <li class="active">
+                <a href="#"><i class="MenuItemIcon fa fa-graduation-cap"></i><span>Обучение</span></a>
+                <ul class="nav NavSubParent" style="display: block;">
+                    <li class="active"><a href="/People/Students"><span>Ученики</span></a></li>
+                    <li><a href="/Learner/Groups"><span>Группы</span></a></li>
+                </ul>
+            </li>
+            <li><a href="/Table/TeacherTime"><i class="MenuItemIcon far fa-calendar-alt"></i><span>Расписание</span></a></li>
+        </ul>
+    </aside>
+
+    <div id="divContent">
+        <div class="container">
+            <header class="row justify-content-between align-items-center mb-3">
+                <x-caption class="col-sm-auto">
+                    <h2 class="h4 m-0">Ученики</h2>
+                </x-caption>
+                <x-right class="col-sm-auto">
+                    {% if is_teacher %}
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#addStudentModal">
+                        <i class="fa fa-plus"></i> Добавить ученика
+                    </button>
+                    {% endif %}
+                </x-right>
+            </header>
+
+            <!-- Карточка фильтра и таблицы -->
+            <div class="card mb-4">
+                <div class="card-header CardHeaderComplex">
+                    <x-card-header-left>
+                        <x-card-header-label>Список учеников</x-card-header-label>
+                    </x-card-header-left>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped m-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"><input type="checkbox" id="checkSelectAllStudents"></th>
+                                    <th>ФИО Ученика</th>
+                                    <th>Информация / Группа</th>
+                                    <th>Филиал</th>
+                                    <th class="text-right">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if students %}
+                                    {% for student in students %}
+                                    <tr>
+                                        <td><input type="checkbox" data-student-id="{{ student.id }}"></td>
+                                        <td>
+                                            <strong>{{ student.name }}</strong>
+                                        </td>
+                                        <td>{{ student.info or '—' }}</td>
+                                        <td><span class="badge badge-info">Рудный</span></td>
+                                        <td class="text-right">
+                                            {% if is_teacher %}
+                                            <form action="/students/delete/{{ student.id }}" method="post" style="display:inline;" onsubmit="return confirm('Удалить ученика?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">Ученики не найдены</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления ученика -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Новый ученик</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="/students/add" method="post">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>ФИО Ученика <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" placeholder="Иванов Иван" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Информация (Группа, уровень, телефон)</label>
+                        <textarea name="info" class="form-control" rows="3" placeholder="Family and Friends 1, 8-10 лет"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $("#checkSelectAllStudents").change(function () {
+            var checked = $(this).prop("checked");
+            $("td input[type='checkbox']").prop("checked", checked);
+        });
+    });
+</script>
+</body>
+</html>

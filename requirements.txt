@@ -6,3 +6,4 @@ requests
 pydantic
 python-dotenv
 itsdangerous
+python-multipart

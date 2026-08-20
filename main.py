@@ -16,31 +16,27 @@ templates = Jinja2Templates(directory="templates")
 DAYS_OF_WEEK = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"]
 
-
 def init_teacher_user():
     db = next(get_db())
-    teacher_user = os.getenv("TEACHER_USER")
-    teacher_pass = os.getenv("TEACHER_PASS")
+    # Читаем именно TEACHER_USERNAME и TEACHER_PASSWORD
+    teacher_user = os.getenv("TEACHER_USERNAME", "alina")
+    teacher_pass = os.getenv("TEACHER_PASSWORD", "teacher123")
 
-    if teacher_user and teacher_pass:
-        user = db.query(models.User).filter(models.User.username == teacher_user).first()
-        if not user:
-            new_user = models.User(
-                username=teacher_user,
-                hashed_password=teacher_pass,
-                full_name="Преподаватель"
-            )
-            db.add(new_user)
-            db.commit()
-            print(f"--- [УСПЕХ] Создан пользователь: {teacher_user} ---")
-        else:
-            user.hashed_password = teacher_pass
-            db.commit()
-            print(f"--- [УСПЕХ] Пароль обновлен для: {teacher_user} ---")
+    user = db.query(models.User).filter(models.User.username == teacher_user).first()
+    if not user:
+        new_user = models.User(
+            username=teacher_user,
+            hashed_password=teacher_pass,
+            full_name="Преподаватель"
+        )
+        db.add(new_user)
+        db.commit()
+        print(f"--- [УСПЕХ] Пользователь {teacher_user} создан! ---")
     else:
-        print("--- [ВНИМАНИЕ] TEACHER_USER или TEACHER_PASS не найдены в переменных окружения ---")
+        user.hashed_password = teacher_pass
+        db.commit()
+        print(f"--- [УСПЕХ] Пароль для {teacher_user} обновлен! ---")
     db.close()
-
 
 @app.on_event("startup")
 def on_startup():

@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from database import engine, get_db, Base
 import models
 
+# Создаем таблицы в БД
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -14,6 +16,38 @@ templates = Jinja2Templates(directory="templates")
 
 DAYS_OF_WEEK = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"]
+
+
+# Функция для автоматического создания пользователя из переменных Render
+def init_teacher_user():
+    db = next(get_db())
+    teacher_user = os.getenv("TEACHER_USER")
+    teacher_pass = os.getenv("TEACHER_PASS")
+
+    if teacher_user and teacher_pass:
+        user = db.query(models.User).filter(models.User.username == teacher_user).first()
+        if not user:
+            # Если пользователя нет — создаем
+            new_user = models.User(
+                username=teacher_user,
+                hashed_password=teacher_pass,
+                full_name="Преподаватель"
+            )
+            db.add(new_user)
+            db.commit()
+            print(f"--- Пользователь {teacher_user} успешно создан! ---")
+        else:
+            # Если пользователь есть — обновляем его пароль из переменных Render
+            user.hashed_password = teacher_pass
+            db.commit()
+            print(f"--- Пароль для {teacher_user} успешно обновлен! ---")
+    db.close()
+
+
+# Запускаем создание/обновление пользователя при старте приложения
+@app.on_event("startup")
+def on_startup():
+    init_teacher_user()
 
 
 def get_current_user_from_cookie(request: Request, db: Session):
@@ -46,6 +80,8 @@ async def login(
         db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(models.User.username == username).first()
+
+    # Проверка пользователя и пароля
     if not user or user.hashed_password != password:
         return templates.TemplateResponse(
             request=request,

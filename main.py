@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session, joinedload
 from database import engine, get_db, Base
 import models
 
-# Создаем таблицы в БД
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -18,7 +17,6 @@ DAYS_OF_WEEK = ["Понедельник", "Вторник", "Среда", "Че�
 TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"]
 
 
-# Функция для автоматического создания пользователя из переменных Render
 def init_teacher_user():
     db = next(get_db())
     teacher_user = os.getenv("TEACHER_USER")
@@ -27,7 +25,6 @@ def init_teacher_user():
     if teacher_user and teacher_pass:
         user = db.query(models.User).filter(models.User.username == teacher_user).first()
         if not user:
-            # Если пользователя нет — создаем
             new_user = models.User(
                 username=teacher_user,
                 hashed_password=teacher_pass,
@@ -35,16 +32,16 @@ def init_teacher_user():
             )
             db.add(new_user)
             db.commit()
-            print(f"--- Пользователь {teacher_user} успешно создан! ---")
+            print(f"--- [УСПЕХ] Создан пользователь: {teacher_user} ---")
         else:
-            # Если пользователь есть — обновляем его пароль из переменных Render
             user.hashed_password = teacher_pass
             db.commit()
-            print(f"--- Пароль для {teacher_user} успешно обновлен! ---")
+            print(f"--- [УСПЕХ] Пароль обновлен для: {teacher_user} ---")
+    else:
+        print("--- [ВНИМАНИЕ] TEACHER_USER или TEACHER_PASS не найдены в переменных окружения ---")
     db.close()
 
 
-# Запускаем создание/обновление пользователя при старте приложения
 @app.on_event("startup")
 def on_startup():
     init_teacher_user()
@@ -81,7 +78,6 @@ async def login(
 ):
     user = db.query(models.User).filter(models.User.username == username).first()
 
-    # Проверка пользователя и пароля
     if not user or user.hashed_password != password:
         return templates.TemplateResponse(
             request=request,
@@ -90,7 +86,16 @@ async def login(
         )
 
     response = RedirectResponse(url="/schedule", status_code=status.HTTP_303_SEE_OTHER)
-    response.set_cookie(key="user", value=user.username)
+
+    # Исправление куки для работы на HTTPS (Render)
+    response.set_cookie(
+        key="user",
+        value=user.username,
+        httponly=True,
+        samesite="lax",
+        secure=True,
+        max_age=3600 * 24 * 7  # Сохраняем на 7 дней
+    )
     return response
 
 

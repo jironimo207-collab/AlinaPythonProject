@@ -16,9 +16,10 @@ templates = Jinja2Templates(directory="templates")
 DAYS_OF_WEEK = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"]
 
+
 def init_teacher_user():
     db = next(get_db())
-    # Читаем именно TEACHER_USERNAME и TEACHER_PASSWORD
+    # Чтение переменных TEACHER_USERNAME и TEACHER_PASSWORD с дефолтными значениями
     teacher_user = os.getenv("TEACHER_USERNAME", "alina")
     teacher_pass = os.getenv("TEACHER_PASSWORD", "teacher123")
 
@@ -31,12 +32,13 @@ def init_teacher_user():
         )
         db.add(new_user)
         db.commit()
-        print(f"--- [УСПЕХ] Пользователь {teacher_user} создан! ---")
+        print(f"--- [УСПЕХ] Создан пользователь: {teacher_user} ---")
     else:
         user.hashed_password = teacher_pass
         db.commit()
-        print(f"--- [УСПЕХ] Пароль для {teacher_user} обновлен! ---")
+        print(f"--- [УСПЕХ] Пароль обновлен для: {teacher_user} ---")
     db.close()
+
 
 @app.on_event("startup")
 def on_startup():
@@ -83,14 +85,14 @@ async def login(
 
     response = RedirectResponse(url="/schedule", status_code=status.HTTP_303_SEE_OTHER)
 
-    # Исправление куки для работы на HTTPS (Render)
+    # Настройка cookie под HTTPS на Render
     response.set_cookie(
         key="user",
         value=user.username,
         httponly=True,
         samesite="lax",
         secure=True,
-        max_age=3600 * 24 * 7  # Сохраняем на 7 дней
+        max_age=3600 * 24 * 7
     )
     return response
 
@@ -124,8 +126,12 @@ async def get_schedule(request: Request, db: Session = Depends(get_db)):
         request=request,
         name="schedule.html",
         context={
+            "user": user,
+            "is_teacher": bool(user),
             "teacher_name": user.full_name if user else "Гость",
-            "tasks": tasks
+            "tasks": tasks,
+            "days": DAYS_OF_WEEK,
+            "time_slots": TIME_SLOTS
         }
     )
 

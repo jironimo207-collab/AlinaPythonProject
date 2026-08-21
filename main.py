@@ -41,7 +41,6 @@ def init_teacher_user():
         db.add(new_user)
         db.commit()
     else:
-        # Обновляем имя, если аккаунт уже создан
         if user.full_name == "Преподаватель":
             user.full_name = "Фурсова Алина Евгеньевна"
             db.commit()
@@ -259,6 +258,39 @@ async def add_grade(
     new_grade = models.Grade(student_id=student_id, test_name=test_name.strip(), score=score, max_score=max_score)
     db.add(new_grade)
     db.commit()
+    return RedirectResponse(url="/students", status_code=status.HTTP_303_SEE_OTHER)
+
+@app.post("/students/grades/edit/{grade_id}")
+async def edit_grade(
+    grade_id: int,
+    request: Request,
+    test_name: str = Form(...),
+    score: int = Form(...),
+    max_score: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = get_current_user_from_cookie(request, db)
+    if not is_teacher_user(user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    grade = db.query(models.Grade).filter(models.Grade.id == grade_id).first()
+    if grade:
+        grade.test_name = test_name.strip()
+        grade.score = score
+        grade.max_score = max_score
+        db.commit()
+    return RedirectResponse(url="/students", status_code=status.HTTP_303_SEE_OTHER)
+
+@app.post("/students/grades/delete/{grade_id}")
+async def delete_grade(grade_id: int, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user_from_cookie(request, db)
+    if not is_teacher_user(user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    grade = db.query(models.Grade).filter(models.Grade.id == grade_id).first()
+    if grade:
+        db.delete(grade)
+        db.commit()
     return RedirectResponse(url="/students", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/my", response_class=HTMLResponse)

@@ -6,12 +6,44 @@
     <title>Ученики — GL STUDY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .brand-logo { font-size: 22px; font-weight: 800; color: #6c5ce7; text-decoration: none; }
-        .sidebar { background-color: #ffffff; border-right: 1px solid #e9ecef; min-height: 100vh; }
-        .nav-link { color: #495057; font-weight: 500; border-radius: 6px; padding: 10px 14px; margin-bottom: 4px; }
-        .nav-link:hover { background-color: #f1f0ff; color: #6c5ce7; }
-        .nav-link.active { background-color: #f1f0ff; color: #6c5ce7; font-weight: 700; border-left: 4px solid #6c5ce7; }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .brand-logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: #6c5ce7;
+            text-decoration: none;
+        }
+        .sidebar {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e9ecef;
+        }
+        @media (min-width: 768px) {
+            .sidebar {
+                border-right: 1px solid #e9ecef;
+                border-bottom: none;
+                min-height: 100vh;
+            }
+        }
+        .nav-link {
+            color: #495057;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 4px;
+        }
+        .nav-link:hover {
+            background-color: #f1f0ff;
+            color: #6c5ce7;
+        }
+        .nav-link.active {
+            background-color: #f1f0ff;
+            color: #6c5ce7;
+            font-weight: 700;
+            border-left: 4px solid #6c5ce7;
+        }
     </style>
 </head>
 <body>
@@ -21,15 +53,26 @@
         <!-- Навигация -->
         <div class="col-md-3 col-lg-2 sidebar p-3 d-flex flex-column justify-content-between">
             <div>
-                <a href="/schedule" class="brand-logo d-block mb-4">GL STUDY</a>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if active_page == 'schedule' %}active{% endif %}" href="/schedule">Расписание</a>
-                    <a class="nav-link {% if active_page == 'students' %}active{% endif %}" href="/students">Ученики</a>
+                <a href="/schedule" class="brand-logo d-block mb-3 mb-md-4">GL STUDY</a>
+                <nav class="nav flex-column mb-3 mb-md-0">
+                    {% if is_student %}
+                        <a class="nav-link {% if active_page == 'my' %}active{% endif %}" href="/my">Мои оценки</a>
+                        <a class="nav-link {% if active_page == 'schedule' %}active{% endif %}" href="/schedule">Расписание</a>
+                    {% else %}
+                        <a class="nav-link {% if active_page == 'schedule' %}active{% endif %}" href="/schedule">Расписание</a>
+                        {% if is_teacher %}
+                            <a class="nav-link {% if active_page == 'students' %}active{% endif %}" href="/students">Ученики</a>
+                        {% endif %}
+                    {% endif %}
                 </nav>
             </div>
-            <div class="pt-3 border-top mt-auto">
-                <div class="small fw-semibold text-truncate mb-2">👤 {{ user.full_name or user.username }}</div>
-                <a href="/logout" class="btn btn-outline-danger btn-sm w-100">Выйти</a>
+            <div class="pt-3 border-top mt-md-auto">
+                {% if user %}
+                    <div class="small fw-semibold text-truncate mb-2">👤 {{ user.full_name or user.username }}</div>
+                    <a href="/logout" class="btn btn-outline-danger btn-sm w-100">Выйти</a>
+                {% else %}
+                    <a href="/login" class="btn btn-primary btn-sm w-100" style="background-color: #6c5ce7; border: none;">Войти</a>
+                {% endif %}
             </div>
         </div>
 

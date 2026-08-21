@@ -10,6 +10,12 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
+    # Роль аккаунта: "teacher" (учитель, полный доступ) или "student" (ученик, только своя страница)
+    role = Column(String, nullable=False, default="teacher")
+    # Если роль "student" — ссылка на карточку ученика, к которой привязан этот логин
+    student_id = Column(Integer, ForeignKey("students.id", ondelete="CASCADE"), nullable=True)
+
+    student = relationship("Student", back_populates="user_account")
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -19,6 +25,10 @@ class Task(Base):
     description = Column(String, nullable=True)
     due_date = Column(String, nullable=False)
     color = Column(String, default="#a29bfe")
+    # Ученик, к которому привязано занятие (для показа личного расписания ученику)
+    student_id = Column(Integer, ForeignKey("students.id", ondelete="SET NULL"), nullable=True)
+
+    student = relationship("Student")
 
 class Student(Base):
     __tablename__ = "students"
@@ -36,6 +46,11 @@ class Student(Base):
 
     # Связь с оценками (при удалении ученика удаляются и его оценки)
     grades = relationship("Grade", back_populates="student", cascade="all, delete-orphan")
+    # Аккаунт ученика для входа на сайт (создаётся учителем, удаляется вместе с учеником)
+    user_account = relationship(
+        "User", back_populates="student", uselist=False,
+        cascade="all, delete-orphan", single_parent=True
+    )
 
 class Grade(Base):
     __tablename__ = "grades"
@@ -45,6 +60,7 @@ class Grade(Base):
     test_name = Column(String, nullable=False)
     score = Column(Integer, nullable=False)
     max_score = Column(Integer, default=100)
+    descriptor = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     student = relationship("Student", back_populates="grades")

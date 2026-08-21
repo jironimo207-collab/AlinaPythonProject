@@ -1,9 +1,11 @@
 import os
+import re
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session, joinedload
+from passlib.context import CryptContext
 from database import engine, get_db, Base
 import models
 
@@ -16,10 +18,27 @@ templates = Jinja2Templates(directory="templates")
 DAYS_OF_WEEK = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"]
 
+# --- Хэширование паролей (требуется пакет: pip install "passlib[bcrypt]") ---
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except ValueError:
+        return False
+
+
+USERNAME_RE = re.compile(r"^[A-Za-z0-9_.\-]{3,32}$")
+HEX_COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
 
 def init_teacher_user():
     db = next(get_db())
-    # Чтение переменных TEACHER_USERNAME и TEACHER_PASSWORD с дефолтными значениями
     teacher_user = os.getenv("TEACHER_USERNAME", "alina")
     teacher_pass = os.getenv("TEACHER_PASSWORD", "teacher123")
 
@@ -27,14 +46,16 @@ def init_teacher_user():
     if not user:
         new_user = models.User(
             username=teacher_user,
-            hashed_password=teacher_pass,
-            full_name="Преподаватель"
+            hashed_password=hash_password(teacher_pass),
+            full_name="Преподаватель",
+            role="teacher"
         )
         db.add(new_user)
         db.commit()
         print(f"--- [УСПЕХ] Создан пользователь: {teacher_user} ---")
     else:
-        user.hashed_password = teacher_pass
+        user.hashed_password = hash_password(teacher_pass)
+        user.role = "teacher"
         db.commit()
         print(f"--- [УСПЕХ] Пароль обновлен для: {teacher_user} ---")
     db.close()
@@ -51,6 +72,14 @@ def get_current_user_from_cookie(request: Request, db: Session):
         return None
     user = db.query(models.User).filter(models.User.username == username).first()
     return user
+
+
+def is_teacher_user(user) -> bool:
+    return bool(user) and user.role == "teacher"
+
+
+def is_student_user(user) -> bool:
+    return bool(user) and user.role == "student"
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -74,18 +103,27 @@ async def login(
         password: str = Form(...),
         db: Session = Depends(get_db)
 ):
+    username = (username or "").strip()
+
+    if not username or not password:
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={"error": "Введите логин и пароль"}
+        )
+
     user = db.query(models.User).filter(models.User.username == username).first()
 
-    if not user or user.hashed_password != password:
+    if not user or not verify_password(password, user.hashed_password):
         return templates.TemplateResponse(
             request=request,
             name="login.html",
             context={"error": "Неверный логин или пароль"}
         )
 
-    response = RedirectResponse(url="/schedule", status_code=status.HTTP_303_SEE_OTHER)
+    target_url = "/my" if user.role == "student" else "/schedule"
+    response = RedirectResponse(url=target_url, status_code=status.HTTP_303_SEE_OTHER)
 
-    # Настройка cookie под HTTPS на Render
     response.set_cookie(
         key="user",
         value=user.username,
@@ -116,25 +154,33 @@ async def profile(request: Request, db: Session = Depends(get_db)):
         context={"user": user, "teacher_name": user.full_name}
     )
 
+
 @app.get("/schedule", response_class=HTMLResponse)
 async def get_schedule(request: Request, db: Session = Depends(get_db)):
     user = get_current_user_from_cookie(request, db)
+
+    if is_student_user(user):
+        return RedirectResponse(url="/my", status_code=status.HTTP_303_SEE_OTHER)
+
+    teacher_mode = is_teacher_user(user)
     tasks = db.query(models.Task).all()
-    students = db.query(models.Student).all()  # Получаем список учеников
+    students = db.query(models.Student).all() if teacher_mode else []
 
     return templates.TemplateResponse(
         request=request,
         name="schedule.html",
         context={
             "user": user,
-            "is_teacher": bool(user),
+            "is_teacher": teacher_mode,
             "teacher_name": user.full_name if user else "Гость",
             "tasks": tasks,
-            "students": students,  # Передаем список в шаблон
+            "students": students,
             "days": DAYS_OF_WEEK,
-            "time_slots": TIME_SLOTS
+            "time_slots": TIME_SLOTS,
+            "error": None
         }
     )
+
 
 @app.post("/schedule/add")
 async def add_lesson(
@@ -150,24 +196,61 @@ async def add_lesson(
         db: Session = Depends(get_db)
 ):
     user = get_current_user_from_cookie(request, db)
-    if not user:
+    if not is_teacher_user(user):
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
-    # 1. Сохраняем занятие в расписание
+    title = (title or "").strip()
+    errors = []
+
+    if not title:
+        errors.append("Введите название занятия.")
+    if day not in DAYS_OF_WEEK:
+        errors.append("Некорректный день недели.")
+    if time_slot not in TIME_SLOTS:
+        errors.append("Некорректное время занятия.")
+    if not HEX_COLOR_RE.match(color or ""):
+        errors.append("Некорректный цвет карточки.")
+    if score is not None and not (0 <= score <= 100):
+        errors.append("Оценка должна быть числом от 0 до 100.")
+
+    student = None
+    if student_id:
+        student = db.query(models.Student).filter(models.Student.id == student_id).first()
+        if not student:
+            errors.append("Выбранный ученик не найден.")
+
+    if errors:
+        tasks = db.query(models.Task).all()
+        students = db.query(models.Student).all()
+        return templates.TemplateResponse(
+            request=request,
+            name="schedule.html",
+            context={
+                "user": user,
+                "is_teacher": True,
+                "teacher_name": user.full_name,
+                "tasks": tasks,
+                "students": students,
+                "days": DAYS_OF_WEEK,
+                "time_slots": TIME_SLOTS,
+                "error": " ".join(errors)
+            }
+        )
+
     due_date = f"{day} {time_slot}"
     new_task = models.Task(
         title=title,
         description=description,
         due_date=due_date,
-        color=color
+        color=color,
+        student_id=student.id if student else None
     )
     db.add(new_task)
 
-    # 2. Если выставили оценку ученику — сохраняем её в базу оценок
-    if student_id and score is not None:
+    if student and score is not None:
         grade_entry = models.Grade(
-            student_id=student_id,
-            test_name=title,  # Название занятия
+            student_id=student.id,
+            test_name=title,
             score=score,
             max_score=100,
             descriptor=descriptor
@@ -177,6 +260,7 @@ async def add_lesson(
     db.commit()
     return RedirectResponse(url="/schedule", status_code=status.HTTP_303_SEE_OTHER)
 
+
 @app.post("/schedule/delete/{task_id}")
 async def delete_lesson(
         task_id: int,
@@ -184,7 +268,7 @@ async def delete_lesson(
         db: Session = Depends(get_db)
 ):
     user = get_current_user_from_cookie(request, db)
-    if not user:
+    if not is_teacher_user(user):
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     task = db.query(models.Task).filter(models.Task.id == task_id).first()
@@ -197,15 +281,21 @@ async def delete_lesson(
 @app.get("/students", response_class=HTMLResponse)
 async def get_students(request: Request, db: Session = Depends(get_db)):
     user = get_current_user_from_cookie(request, db)
-    students = db.query(models.Student).options(joinedload(models.Student.grades)).all()
+    if not is_teacher_user(user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    students = db.query(models.Student).options(
+        joinedload(models.Student.grades), joinedload(models.Student.user_account)
+    ).all()
 
     return templates.TemplateResponse(
         request=request,
         name="students.html",
         context={
             "students": students,
-            "is_teacher": bool(user),
-            "teacher_name": user.full_name if user else "Гость"
+            "is_teacher": True,
+            "teacher_name": user.full_name,
+            "error": None
         }
     )
 
@@ -214,6 +304,8 @@ async def get_students(request: Request, db: Session = Depends(get_db)):
 async def add_student(
         request: Request,
         name: str = Form(...),
+        username: str = Form(...),
+        password: str = Form(...),
         age: str = Form(None),
         branch: str = Form(None),
         category: str = Form(None),
@@ -225,12 +317,43 @@ async def add_student(
         db: Session = Depends(get_db)
 ):
     user = get_current_user_from_cookie(request, db)
-    if not user:
+    if not is_teacher_user(user):
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    name = (name or "").strip()
+    username = (username or "").strip()
+    age = (age or "").strip()
+    errors = []
+
+    if not name:
+        errors.append("Введите ФИО ученика.")
+    if not USERNAME_RE.match(username):
+        errors.append("Логин должен быть длиной 3-32 символа и содержать только латинские буквы, цифры, '.', '_' или '-'.")
+    elif db.query(models.User).filter(models.User.username == username).first():
+        errors.append("Такой логин уже занят, выберите другой.")
+    if len(password) < 6:
+        errors.append("Пароль должен содержать не менее 6 символов.")
+    if age and not age.isdigit():
+        errors.append("Возраст должен быть числом.")
+
+    if errors:
+        students = db.query(models.Student).options(
+            joinedload(models.Student.grades), joinedload(models.Student.user_account)
+        ).all()
+        return templates.TemplateResponse(
+            request=request,
+            name="students.html",
+            context={
+                "students": students,
+                "is_teacher": True,
+                "teacher_name": user.full_name,
+                "error": " ".join(errors)
+            }
+        )
 
     new_student = models.Student(
         name=name,
-        age=age,
+        age=age or None,
         branch=branch,
         category=category,
         subject=subject,
@@ -240,6 +363,16 @@ async def add_student(
         contacts=contacts
     )
     db.add(new_student)
+    db.flush()
+
+    new_account = models.User(
+        username=username,
+        hashed_password=hash_password(password),
+        full_name=name,
+        role="student",
+        student_id=new_student.id
+    )
+    db.add(new_account)
     db.commit()
     return RedirectResponse(url="/students", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -251,7 +384,7 @@ async def delete_student(
         db: Session = Depends(get_db)
 ):
     user = get_current_user_from_cookie(request, db)
-    if not user:
+    if not is_teacher_user(user):
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     student = db.query(models.Student).filter(models.Student.id == student_id).first()
@@ -271,12 +404,36 @@ async def add_grade(
         db: Session = Depends(get_db)
 ):
     user = get_current_user_from_cookie(request, db)
-    if not user:
+    if not is_teacher_user(user):
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     student = db.query(models.Student).filter(models.Student.id == student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Ученик не найден")
+
+    test_name = (test_name or "").strip()
+    errors = []
+    if not test_name:
+        errors.append("Введите название теста/работы.")
+    if max_score <= 0:
+        errors.append("Максимальный балл должен быть больше нуля.")
+    if not (0 <= score <= max_score):
+        errors.append(f"Оценка должна быть в диапазоне от 0 до {max_score}.")
+
+    if errors:
+        students = db.query(models.Student).options(
+            joinedload(models.Student.grades), joinedload(models.Student.user_account)
+        ).all()
+        return templates.TemplateResponse(
+            request=request,
+            name="students.html",
+            context={
+                "students": students,
+                "is_teacher": True,
+                "teacher_name": user.full_name,
+                "error": " ".join(errors)
+            }
+        )
 
     new_grade = models.Grade(
         student_id=student_id,
@@ -287,3 +444,32 @@ async def add_grade(
     db.add(new_grade)
     db.commit()
     return RedirectResponse(url="/students", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@app.get("/my", response_class=HTMLResponse)
+async def my_page(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user_from_cookie(request, db)
+    if not is_student_user(user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    student = db.query(models.Student).options(
+        joinedload(models.Student.grades)
+    ).filter(models.Student.id == user.student_id).first()
+
+    if not student:
+        response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+        response.delete_cookie("user")
+        return response
+
+    my_tasks = db.query(models.Task).filter(models.Task.student_id == student.id).all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="my.html",
+        context={
+            "student": student,
+            "tasks": my_tasks,
+            "days": DAYS_OF_WEEK,
+            "time_slots": TIME_SLOTS
+        }
+    )

@@ -3,149 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GL STUDY — Расписание</title>
+    <title>Расписание занятий — GL STUDY</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { display: flex; background-color: #f4f6f9; color: #333; min-height: 100vh; flex-direction: row; }
-
-        /* Sidebar Styles */
-        .sidebar { width: 220px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s ease; }
-        .logo { padding: 20px; font-size: 24px; font-weight: bold; color: #7b2cbf; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .logo span { color: #3a0ca3; }
-        .menu { list-style: none; padding-top: 10px; }
-        .menu li a { display: flex; align-items: center; padding: 12px 20px; color: #555; text-decoration: none; font-size: 14px; }
-        .menu li.active a { background: #f0f0f5; color: #7b2cbf; font-weight: bold; border-left: 4px solid #7b2cbf; }
-
-        /* Main Content Styles */
-        .main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow-y: auto; }
-        .header { height: 60px; background: #fff; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-        .header-title { display: flex; align-items: center; gap: 10px; }
-        .menu-toggle { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: #7b2cbf; }
-
-        .user-info { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-        .user-avatar { width: 35px; height: 35px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-
-        .content { padding: 20px; }
-        .page-title { font-size: 20px; font-weight: 500; margin-bottom: 15px; color: #444; }
-
-        .filter-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; flex-wrap: wrap; }
-        .filter-title { font-size: 12px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 10px; }
-        .btn-primary { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block; white-space: nowrap; }
-
-        /* Legend Box */
-        .legend-box { background: #fcfcfc; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px 15px; font-size: 12px; color: #555; }
-        .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-        .legend-item:last-child { margin-bottom: 0; }
-        .color-dot { width: 14px; height: 14px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
-
-        /* Schedule Table Mobile Scroll Container */
-        .table-wrapper { width: 100%; overflow-x: auto; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; }
-        .schedule-table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        .schedule-table th, .schedule-table td { border: 1px solid #e0e0e0; padding: 10px; text-align: center; vertical-align: top; }
-        .schedule-table th { background: #fafafa; font-size: 13px; color: #555; }
-        .day-header { font-weight: bold; text-align: left; background: #fafafa; width: 120px; vertical-align: middle; }
-
-        .lesson-card { color: white; padding: 8px; border-radius: 4px; font-size: 12px; text-align: left; margin-bottom: 5px; position: relative; padding-right: 20px; word-break: break-word; }
-        .delete-btn { position: absolute; top: 4px; right: 4px; background: none; border: none; color: white; cursor: pointer; font-weight: bold; font-size: 12px; }
-
-        /* Modal Styles */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; padding: 15px; }
-        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 13px; margin-bottom: 5px; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-
-        /* Mobile Responsive Breakpoints */
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            .sidebar { position: fixed; top: 0; left: -220px; height: 100vh; z-index: 999; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
-            .sidebar.active { transform: translateX(220px); }
-            .menu-toggle { display: block; }
-            .filter-card { flex-direction: column; align-items: stretch; }
-            .legend-box { width: 100%; }
-            .content { padding: 15px; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { min-height: 100vh; background-color: #ffffff; border-right: 1px solid #dee2e6; }
+        .nav-link { color: #495057; font-weight: 500; padding: 12px 20px; border-left: 4px solid transparent; }
+        .nav-link.active { color: #6c5ce7; background-color: #f1f0ff; border-left-color: #6c5ce7; font-weight: 600; }
+        .brand-logo { font-size: 24px; font-weight: 800; color: #6c5ce7; text-decoration: none; }
+        .schedule-table th { background-color: #f1f0ff; text-align: center; vertical-align: middle; }
+        .task-card {
+            border-radius: 8px; padding: 8px 12px; color: #ffffff;
+            margin-bottom: 6px; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            position: relative;
         }
+        .task-card .btn-delete {
+            position: absolute; top: 4px; right: 6px; color: #fff;
+            background: rgba(0,0,0,0.25); border: none; border-radius: 50%;
+            width: 20px; height: 20px; line-height: 16px; text-align: center;
+            padding: 0; font-size: 12px; cursor: pointer;
+        }
+        .task-card .btn-delete:hover { background: rgba(255,0,0,0.7); }
     </style>
 </head>
 <body>
 
-    <div class="sidebar" id="sidebar">
-        <div class="logo">
-            GL <span>STUDY</span>
-        </div>
-        <ul class="menu">
-            <li class="active"><a href="/schedule">Моё расписание</a></li>
-            <li><a href="/students">Ученики</a></li>
-        </ul>
-    </div>
-
-    <div class="main">
-        <div class="header">
-            <div class="header-title">
-                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-                <strong>Расписание занятий</strong>
-            </div>
-            <div class="user-info">
-                {% if is_teacher %}
-                    <div class="user-avatar">👤</div>
-                    <span style="display: none; @media(min-width: 480px){display: inline;}">{{ teacher_name }}</span>
-                    <a href="/logout" style="color: #dc3545; text-decoration: none; margin-left: 5px;">Выйти</a>
-                {% else %}
-                    <a href="/login" class="btn-primary">Вход</a>
-                {% endif %}
-            </div>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 sidebar p-3">
+            <a href="/schedule" class="brand-logo d-block mb-4 ps-2">GL STUDY</a>
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="/schedule">Моё расписание</a>
+                <a class="nav-link" href="/students">Ученики</a>
+            </nav>
         </div>
 
-        <div class="content">
-            <div class="page-title">Преподаватель: {{ teacher_name }}</div>
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 p-4">
 
-            <div class="filter-card">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <h3 class="fw-bold mb-0">Расписание занятий</h3>
                 <div>
-                    <div class="filter-title">Управление</div>
-                    <div>
-                        {% if is_teacher %}
-                            <button class="btn-primary" onclick="openModal()">+ Добавить урок</button>
-                        {% else %}
-                            <span style="font-size: 13px; color: #666;">Режим просмотра (ученик)</span>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="legend-box">
-                    <div class="legend-item"><span class="color-dot" style="background: #a29bfe;"></span> Текущие занятия</div>
-                    <div class="legend-item"><span class="color-dot" style="background: #ff7675;"></span> Занятия закончатся в течение недели</div>
-                    <div class="legend-item"><span class="color-dot" style="background: #55efc4;"></span> Занятия начнутся в ближайшее время</div>
-                    <div class="legend-item"><span class="color-dot" style="background: #fdcb6e;"></span> Нет преподавателя</div>
-                    <div class="legend-item"><span class="color-dot" style="background: #d63031;"></span> Пропуск</div>
+                    {% if is_teacher %}
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="fw-semibold text-primary">👤 {{ teacher_name }}</span>
+                            <a href="/logout" class="btn btn-outline-danger btn-sm">Выйти</a>
+                        </div>
+                    {% else %}
+                        <a href="/login" class="btn btn-primary px-4">Вход</a>
+                    {% endif %}
                 </div>
             </div>
 
-            <div class="table-wrapper">
-                <table class="schedule-table">
+            <!-- Control Bar -->
+            <div class="card p-3 shadow-sm mb-4 border-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Преподаватель: <strong>{{ teacher_name }}</strong></h5>
+                        <p class="mb-0 text-muted">
+                            Управление:
+                            {% if is_teacher %}
+                                <span class="badge bg-success">Режим редактирования (Преподаватель)</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Режим просмотра (Ученик)</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    {% if is_teacher %}
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addLessonModal">
+                            + Добавить занятие
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Schedule Grid -->
+            <div class="table-responsive bg-white rounded shadow-sm">
+                <table class="table table-bordered schedule-table mb-0">
                     <thead>
                         <tr>
-                            <th>День / Время</th>
-                            {% for slot in time_slots %}
-                                <th>{{ slot }}</th>
+                            <th style="width: 100px;">Время</th>
+                            {% for day in days %}
+                                <th>{{ day }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
-                        {% for day in days_of_week %}
+                        {% for slot in time_slots %}
                             <tr>
-                                <td class="day-header">{{ day }}</td>
-                                {% for slot in time_slots %}
-                                    <td>
+                                <td class="text-center align-middle fw-bold text-muted bg-light">{{ slot }}</td>
+                                {% for day in days %}
+                                    {% set cell_key = day + " " + slot %}
+                                    <td class="align-top" style="min-width: 150px; height: 100px;">
                                         {% for task in tasks %}
-                                            {% if day in task.due_date and slot in task.due_date %}
-                                                <div class="lesson-card" style="background-color: {{ task.color or '#a29bfe' }};">
-                                                    <strong>{{ task.title }}</strong><br>
-                                                    <small>{{ task.description or '' }}</small>
-
+                                            {% if task.due_date == cell_key %}
+                                                <div class="task-card" style="background-color: {{ task.color or '#6c5ce7' }};">
                                                     {% if is_teacher %}
-                                                        <form action="/schedule/delete/{{ task.id }}" method="post" style="display:inline;">
-                                                            <button type="submit" class="delete-btn" onclick="return confirm('Удалить этот урок?')">✕</button>
+                                                        <form action="/schedule/delete/{{ task.id }}" method="POST" class="d-inline">
+                                                            <button type="submit" class="btn-delete" onclick="return confirm('Удалить занятие?')" title="Удалить">×</button>
                                                         </form>
+                                                    {% endif %}
+
+                                                    <div class="fw-bold pe-3">{{ task.title }}</div>
+
+                                                    {% if task.description %}
+                                                        <div class="mt-1 opacity-90">
+                                                            <small class="d-block text-break" style="white-space: pre-line;">{{ task.description }}</small>
+                                                        </div>
                                                     {% endif %}
                                                 </div>
                                             {% endif %}
@@ -157,59 +124,115 @@
                     </tbody>
                 </table>
             </div>
+
         </div>
     </div>
+</div>
 
-    <div class="modal" id="lessonModal">
-        <div class="modal-content">
-            <h3>Добавление урока</h3>
-            <form action="/schedule/add" method="post" style="margin-top: 15px;">
-                <div class="form-group">
-                    <label>Предмет / Группа:</label>
-                    <input type="text" name="title" placeholder="Family and Friends" required>
-                </div>
-                <div class="form-group">
-                    <label>День недели:</label>
-                    <select name="day" required>
-                        {% for day in days_of_week %}
-                            <option value="{{ day }}">{{ day }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Время занятия:</label>
-                    <select name="time_slot" required>
-                        {% for slot in time_slots %}
-                            <option value="{{ slot }}">{{ slot }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Статус / Цвет плашки:</label>
-                    <select name="color" required>
-                        <option value="#a29bfe" style="background: #a29bfe; color: white;">Текущие занятия (Фиолетовый)</option>
-                        <option value="#ff7675" style="background: #ff7675; color: white;">Занятия закончатся в течение недели (Розовый)</option>
-                        <option value="#55efc4" style="background: #55efc4; color: black;">Занятия начнутся в ближайшее время (Зелёный)</option>
-                        <option value="#fdcb6e" style="background: #fdcb6e; color: black;">Нет преподавателя (Жёлтый)</option>
-                        <option value="#d63031" style="background: #d63031; color: white;">Пропуск (Красный)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Заметки / Филиал:</label>
-                    <textarea name="description" rows="2" placeholder="Кабинет №3 / Рудный"></textarea>
-                </div>
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" onclick="closeModal()" style="padding: 8px 15px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;">Отмена</button>
-                    <button type="submit" class="btn-primary">Сохранить</button>
-                </div>
-            </form>
+<!-- Modal -->
+{% if is_teacher %}
+<div class="modal fade" id="addLessonModal" tabindex="-1" aria-labelledby="addLessonModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="/schedule/add" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addLessonModalLabel">Добавить занятие и оценку</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
         </div>
-    </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Предмет / Название занятия</label>
+            <input type="text" id="lessonTitle" name="title" class="form-control" required placeholder="Например: Математика / Python">
+          </div>
 
-    <script>
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
-        function openModal() { document.getElementById('lessonModal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('lessonModal').style.display = 'none'; }
-    </script>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label">День недели</label>
+              <select name="day" class="form-select" required>
+                {% for day in days %}
+                  <option value="{{ day }}">{{ day }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Время</label>
+              <select name="time_slot" class="form-select" required>
+                {% for slot in time_slots %}
+                  <option value="{{ slot }}">{{ slot }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Select Student -->
+          <div class="mb-3">
+            <label class="form-label">Ученик (для привязки оценки)</label>
+            <select id="studentSelect" name="student_id" class="form-select" onchange="updateDescription()">
+              <option value="">-- Выберите ученика --</option>
+              {% for student in students %}
+                <option value="{{ student.id }}" data-name="{{ student.name }}">{{ student.name }} {% if student.group_name %}({{ student.group_name }}){% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Grade and Descriptor -->
+          <div class="row mb-3">
+            <div class="col-4">
+              <label class="form-label">Оценка (0-100)</label>
+              <input type="number" id="gradeInput" name="score" class="form-control" placeholder="100" min="0" max="100" oninput="updateDescription()">
+            </div>
+            <div class="col-8">
+              <label class="form-label">Дескриптор / Критерий</label>
+              <input type="text" id="descriptorInput" name="descriptor" class="form-control" placeholder="Отличная работа на уроке" oninput="updateDescription()">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Цвет карточки</label>
+            <input type="color" name="color" class="form-control form-control-color w-100" value="#6c5ce7">
+          </div>
+
+          <!-- Auto-generated description -->
+          <div class="mb-3">
+            <label class="form-label">Заметка на карточке расписания</label>
+            <textarea id="descriptionField" name="description" class="form-control" rows="3" placeholder="Заполняется автоматически"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function updateDescription() {
+    const studentSelect = document.getElementById('studentSelect');
+    const selectedOption = studentSelect.options[studentSelect.selectedIndex];
+    const studentName = selectedOption.getAttribute('data-name') || '';
+
+    const score = document.getElementById('gradeInput').value;
+    const descriptor = document.getElementById('descriptorInput').value;
+
+    let textParts = [];
+
+    if (studentName) {
+        textParts.push("Ученик: " + studentName);
+    }
+    if (score) {
+        textParts.push("Оценка: " + score + "/100");
+    }
+    if (descriptor) {
+        textParts.push("Дескриптор: " + descriptor);
+    }
+
+    document.getElementById('descriptionField').value = textParts.join('\n');
+}
+</script>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

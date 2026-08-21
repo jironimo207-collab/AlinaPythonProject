@@ -3,265 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GL STUDY — Ученики</title>
+    <title>Расписание занятий — GL STUDY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { display: flex; background-color: #f4f6f9; color: #333; min-height: 100vh; flex-direction: row; }
-        .sidebar { width: 220px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s ease; }
-        .logo { padding: 20px; font-size: 24px; font-weight: bold; color: #7b2cbf; border-bottom: 1px solid #eee; }
-        .logo span { color: #3a0ca3; }
-        .menu { list-style: none; padding-top: 10px; }
-        .menu li a { display: flex; align-items: center; padding: 12px 20px; color: #555; text-decoration: none; font-size: 14px; }
-        .menu li.active a { background: #f0f0f5; color: #7b2cbf; font-weight: bold; border-left: 4px solid #7b2cbf; }
-        .main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow-y: auto; }
-        .header { height: 60px; background: #fff; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-        .menu-toggle { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: #7b2cbf; margin-right: 10px; }
-        .user-info { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-        .user-avatar { width: 35px; height: 35px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .content { padding: 20px; }
-        .btn-primary { background: #3b82f6; border-color: #3b82f6; }
-        .btn-primary:hover { background: #2563eb; }
-        .table th { font-weight: 600; font-size: 13px; color: #555; white-space: nowrap; }
-        .table td { font-size: 13px; white-space: nowrap; }
-
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            .sidebar { position: fixed; top: 0; left: -220px; height: 100vh; z-index: 999; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
-            .sidebar.active { transform: translateX(220px); }
-            .menu-toggle { display: inline-block; }
-            .content { padding: 15px; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { min-height: 100vh; background-color: #ffffff; border-right: 1px solid #dee2e6; }
+        .nav-link { color: #495057; font-weight: 500; padding: 12px 20px; border-left: 4px solid transparent; }
+        .nav-link.active { color: #6c5ce7; background-color: #f1f0ff; border-left-color: #6c5ce7; font-weight: 600; }
+        .brand-logo { font-size: 24px; font-weight: 800; color: #6c5ce7; text-decoration: none; }
+        .schedule-table th { background-color: #f1f0ff; text-align: center; vertical-align: middle; }
+        .task-card {
+            border-radius: 8px; padding: 8px 12px; color: #ffffff;
+            margin-bottom: 6px; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            position: relative;
         }
+        .task-card .btn-delete {
+            position: absolute; top: 4px; right: 6px; color: #fff;
+            background: rgba(0,0,0,0.25); border: none; border-radius: 50%;
+            width: 20px; height: 20px; line-height: 16px; text-align: center;
+            padding: 0; font-size: 12px; cursor: pointer;
+        }
+        .task-card .btn-delete:hover { background: rgba(255,0,0,0.7); }
     </style>
 </head>
 <body>
 
-    <div class="sidebar" id="sidebar">
-        <div class="logo">GL <span>STUDY</span></div>
-        <ul class="menu">
-            <li><a href="/schedule">Моё расписание</a></li>
-            <li class="active"><a href="/students">Ученики</a></li>
-        </ul>
-    </div>
-
-    <div class="main">
-        <div class="header">
-            <div class="d-flex align-items-center">
-                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-                <strong>Управление учениками</strong>
-            </div>
-            <div class="user-info">
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 sidebar p-3">
+            <a href="/schedule" class="brand-logo d-block mb-4 ps-2">GL STUDY</a>
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="/schedule">Моё расписание</a>
                 {% if is_teacher %}
-                    <div class="user-avatar">👤</div>
-                    <span class="d-none d-sm-inline">{{ teacher_name }}</span>
-                    <a href="/logout" class="text-danger text-decoration-none ms-2">Выйти</a>
-                {% else %}
-                    <a href="/login" class="btn btn-primary btn-sm">Вход</a>
+                <a class="nav-link" href="/students">Ученики</a>
                 {% endif %}
-            </div>
+            </nav>
         </div>
 
-        <div class="content">
-            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                <h4 class="m-0">Список учеников</h4>
-                {% if is_teacher %}
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-                    + Добавить ученика
-                </button>
-                {% endif %}
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 p-4">
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <h3 class="fw-bold mb-0">Расписание занятий</h3>
+                <div>
+                    {% if is_teacher %}
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="fw-semibold text-primary">👤 {{ teacher_name }}</span>
+                            <a href="/logout" class="btn btn-outline-danger btn-sm">Выйти</a>
+                        </div>
+                    {% else %}
+                        <a href="/login" class="btn btn-primary px-4">Вход</a>
+                    {% endif %}
+                </div>
             </div>
 
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle m-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 40px;" class="ps-3"><input type="checkbox" id="checkAll"></th>
-                                    <th>ФИО</th>
-                                    <th>Возраст</th>
-                                    <th>Оценки / Тесты</th>
-                                    <th>Филиалы</th>
-                                    <th>Категория</th>
-                                    <th>Дисциплины</th>
-                                    <th>Группа</th>
-                                    <th>Контакты</th>
-                                    {% if is_teacher %}<th class="text-end pe-3">Действия</th>{% endif %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if students %}
-                                    {% for student in students %}
-                                    <tr>
-                                        <td class="ps-3"><input type="checkbox"></td>
-                                        <td><strong>{{ student.name }}</strong></td>
-                                        <td>{{ student.age or '—' }}</td>
-                                        <td>
-                                            {% if student.grades %}
-                                                <button class="btn btn-sm btn-light border position-relative" data-bs-toggle="modal" data-bs-target="#viewGradesModal{{ student.id }}">
-                                                    📊 {{ student.grades[-1].score }}/{{ student.grades[-1].max_score }}
-                                                    <span class="badge bg-secondary ms-1">{{ student.grades|length }}</span>
-                                                </button>
-                                            {% else %}
-                                                <span class="text-muted small">Нет оценок</span>
-                                            {% endif %}
-                                        </td>
-                                        <td><span class="badge bg-info text-dark">{{ student.branch or 'Рудный' }}</span></td>
-                                        <td>{{ student.category or '—' }}</td>
-                                        <td>{{ student.subject or '—' }}</td>
-                                        <td>{{ student.group_name or '—' }}</td>
-                                        <td>{{ student.contacts or '—' }}</td>
-                                        {% if is_teacher %}
-                                        <td class="text-end pe-3">
-                                            <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#addGradeModal{{ student.id }}">
-                                                + Оценка
-                                            </button>
-                                            <form action="/students/delete/{{ student.id }}" method="post" class="d-inline" onsubmit="return confirm('Удалить ученика?');">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
-                                            </form>
-                                        </td>
-                                        {% endif %}
-                                    </tr>
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
 
-                                    <!-- Модальное окно просмотра оценок -->
-                                    <div class="modal fade text-start" id="viewGradesModal{{ student.id }}" tabindex="-1" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">История оценок: {{ student.name }}</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    {% if student.grades %}
-                                                        <ul class="list-group">
-                                                            {% for grade in student.grades %}
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    <div>
-                                                                        <strong>{{ grade.test_name }}</strong>
-                                                                        <br><small class="text-muted">{{ grade.created_at.strftime('%d.%m.%Y %H:%M') if grade.created_at else '' }}</small>
-                                                                    </div>
-                                                                    <span class="badge bg-primary rounded-pill fs-6">{{ grade.score }} / {{ grade.max_score }}</span>
-                                                                </li>
-                                                            {% endfor %}
-                                                        </ul>
-                                                    {% else %}
-                                                        <p class="text-center text-muted m-0">Оценок пока нет</p>
+            <!-- Control Bar -->
+            <div class="card p-3 shadow-sm mb-4 border-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Преподаватель: <strong>{{ teacher_name }}</strong></h5>
+                        <p class="mb-0 text-muted">
+                            Управление:
+                            {% if is_teacher %}
+                                <span class="badge bg-success">Режим редактирования (Преподаватель)</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Режим просмотра (Ученик)</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    {% if is_teacher %}
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addLessonModal">
+                            + Добавить занятие
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Schedule Grid -->
+            <div class="table-responsive bg-white rounded shadow-sm">
+                <table class="table table-bordered schedule-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">Время</th>
+                            {% for day in days %}
+                                <th>{{ day }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for slot in time_slots %}
+                            <tr>
+                                <td class="text-center align-middle fw-bold text-muted bg-light">{{ slot }}</td>
+                                {% for day in days %}
+                                    {% set cell_key = day + " " + slot %}
+                                    <td class="align-top" style="min-width: 150px; height: 100px;">
+                                        {% for task in tasks %}
+                                            {% if task.due_date == cell_key %}
+                                                <div class="task-card" style="background-color: {{ task.color or '#6c5ce7' }};">
+                                                    {% if is_teacher %}
+                                                        <form action="/schedule/delete/{{ task.id }}" method="POST" class="d-inline">
+                                                            <button type="submit" class="btn-delete" onclick="return confirm('Удалить занятие?')" title="Удалить">×</button>
+                                                        </form>
+                                                    {% endif %}
+
+                                                    <div class="fw-bold pe-3">{{ task.title }}</div>
+
+                                                    {% if task.description %}
+                                                        <div class="mt-1 opacity-90">
+                                                            <small class="d-block text-break" style="white-space: pre-line;">{{ task.description }}</small>
+                                                        </div>
                                                     {% endif %}
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Модальное окно добавления оценки -->
-                                    {% if is_teacher %}
-                                    <div class="modal fade text-start" id="addGradeModal{{ student.id }}" tabindex="-1" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Выставить оценку: {{ student.name }}</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <form action="/students/{{ student.id }}/grades/add" method="post">
-                                                    <div class="modal-body row g-3">
-                                                        <div class="col-12">
-                                                            <label class="form-label">Название теста / Работа</label>
-                                                            <input type="text" name="test_name" class="form-control" placeholder="Контрольный тест #1" required>
-                                                        </div>
-                                                        <div class="col-6">
-                                                            <label class="form-label">Набранный балл</label>
-                                                            <input type="number" name="score" class="form-control" placeholder="85" min="0" required>
-                                                        </div>
-                                                        <div class="col-6">
-                                                            <label class="form-label">Макс. балл</label>
-                                                            <input type="number" name="max_score" class="form-control" value="100" min="1" required>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
-                                                        <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-
-                                    {% endfor %}
-                                {% else %}
-                                    <tr>
-                                        <td colspan="10" class="text-center text-muted py-4">Ученики не найдены</td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+
         </div>
     </div>
+</div>
 
-    <!-- Модальное окно добавления ученика -->
-    <div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Новый ученик</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="/students/add" method="post">
-                    <div class="modal-body row g-3">
-                        <div class="col-md-6 col-12">
-                            <label class="form-label">ФИО Ученика <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" placeholder="Иванов Иван" required>
-                        </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label">Возраст</label>
-                            <input type="text" name="age" class="form-control" placeholder="11 лет">
-                        </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label">Филиалы</label>
-                            <input type="text" name="branch" class="form-control" value="Рудный">
-                        </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label">Категория</label>
-                            <input type="text" name="category" class="form-control" placeholder="Школьник / Дошкольник">
-                        </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label">Дисциплины</label>
-                            <input type="text" name="subject" class="form-control" placeholder="Английский язык">
-                        </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label">Группа</label>
-                            <input type="text" name="group_name" class="form-control" placeholder="Wonderland A">
-                        </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label">Дата / тип обращения</label>
-                            <input type="text" name="request_date" class="form-control" placeholder="02.07.2024 / Звонок">
-                        </div>
-                        <div class="col-md-6 col-12">
-                            <label class="form-label">Дата визита</label>
-                            <input type="text" name="visit_date" class="form-control" placeholder="05.07.2024">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Контакты</label>
-                            <input type="text" name="contacts" class="form-control" placeholder="+7 775 000 00 00">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                        <button type="submit" class="btn btn-primary">Сохранить</button>
-                    </div>
-                </form>
-            </div>
+<!-- Modal -->
+{% if is_teacher %}
+<div class="modal fade" id="addLessonModal" tabindex="-1" aria-labelledby="addLessonModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="/schedule/add" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addLessonModalLabel">Добавить занятие и оценку</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
         </div>
-    </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Предмет / Название занятия</label>
+            <input type="text" id="lessonTitle" name="title" class="form-control" required placeholder="Например: Математика / Python">
+          </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
-        document.getElementById('checkAll')?.addEventListener('change', function() {
-            document.querySelectorAll('tbody input[type="checkbox"]').forEach(cb => cb.checked = this.checked);
-        });
-    </script>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label">День недели</label>
+              <select name="day" class="form-select" required>
+                {% for day in days %}
+                  <option value="{{ day }}">{{ day }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Время</label>
+              <select name="time_slot" class="form-select" required>
+                {% for slot in time_slots %}
+                  <option value="{{ slot }}">{{ slot }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Select Student -->
+          <div class="mb-3">
+            <label class="form-label">Ученик (для привязки оценки)</label>
+            <select id="studentSelect" name="student_id" class="form-select" onchange="updateDescription()">
+              <option value="">-- Выберите ученика --</option>
+              {% for student in students %}
+                <option value="{{ student.id }}" data-name="{{ student.name }}">{{ student.name }} {% if student.group_name %}({{ student.group_name }}){% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Grade and Descriptor -->
+          <div class="row mb-3">
+            <div class="col-4">
+              <label class="form-label">Оценка (0-100)</label>
+              <input type="number" id="gradeInput" name="score" class="form-control" placeholder="100" min="0" max="100" oninput="updateDescription()">
+            </div>
+            <div class="col-8">
+              <label class="form-label">Дескриптор / Критерий</label>
+              <input type="text" id="descriptorInput" name="descriptor" class="form-control" placeholder="Отличная работа на уроке" oninput="updateDescription()">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Цвет карточки</label>
+            <input type="color" name="color" class="form-control form-control-color w-100" value="#6c5ce7">
+          </div>
+
+          <!-- Auto-generated description -->
+          <div class="mb-3">
+            <label class="form-label">Заметка на карточке расписания</label>
+            <textarea id="descriptionField" name="description" class="form-control" rows="3" placeholder="Заполняется автоматически"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function updateDescription() {
+    const studentSelect = document.getElementById('studentSelect');
+    const selectedOption = studentSelect.options[studentSelect.selectedIndex];
+    const studentName = selectedOption.getAttribute('data-name') || '';
+
+    const score = document.getElementById('gradeInput').value;
+    const descriptor = document.getElementById('descriptorInput').value;
+
+    let textParts = [];
+
+    if (studentName) {
+        textParts.push("Ученик: " + studentName);
+    }
+    if (score) {
+        textParts.push("Оценка: " + score + "/100");
+    }
+    if (descriptor) {
+        textParts.push("Дескриптор: " + descriptor);
+    }
+
+    document.getElementById('descriptionField').value = textParts.join('\n');
+}
+</script>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

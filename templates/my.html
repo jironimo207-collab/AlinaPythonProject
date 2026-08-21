@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моя страница — GL STUDY</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .brand-logo { font-size: 24px; font-weight: 800; color: #6c5ce7; text-decoration: none; }
+        .schedule-table th { background-color: #f1f0ff; text-align: center; vertical-align: middle; }
+        .task-card {
+            border-radius: 8px; padding: 8px 12px; color: #ffffff;
+            margin-bottom: 6px; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+<body>
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <a href="/my" class="brand-logo">GL STUDY</a>
+        <div class="d-flex align-items-center gap-3">
+            <span class="fw-semibold text-primary">👤 {{ student.name }}</span>
+            <a href="/logout" class="btn btn-outline-danger btn-sm">Выйти</a>
+        </div>
+    </div>
+
+    <div class="card p-3 shadow-sm mb-4 border-0">
+        <h5 class="mb-1">Добро пожаловать, {{ student.name }}</h5>
+        <p class="mb-0 text-muted">
+            Это ваша личная страница: здесь показаны только ваши оценки и ваши занятия.
+        </p>
+    </div>
+
+    <!-- Оценки -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-header bg-white fw-bold">Мои оценки</div>
+        <div class="card-body p-0">
+            {% if student.grades %}
+            <ul class="list-group list-group-flush">
+                {% for grade in student.grades %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold">{{ grade.test_name }}</div>
+                        {% if grade.descriptor %}
+                            <small class="text-muted">{{ grade.descriptor }}</small>
+                        {% endif %}
+                    </div>
+                    <span class="badge bg-primary rounded-pill fs-6">{{ grade.score }} / {{ grade.max_score }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-center text-muted m-0 py-4">Оценок пока нет</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Моё расписание -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white fw-bold">Моё расписание</div>
+        <div class="table-responsive">
+            <table class="table table-bordered schedule-table mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 100px;">Время</th>
+                        {% for day in days %}
+                            <th>{{ day }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for slot in time_slots %}
+                        <tr>
+                            <td class="text-center align-middle fw-bold text-muted bg-light">{{ slot }}</td>
+                            {% for day in days %}
+                                {% set cell_key = day + " " + slot %}
+                                <td class="align-top" style="min-width: 150px; height: 90px;">
+                                    {% for task in tasks %}
+                                        {% if task.due_date == cell_key %}
+                                            <div class="task-card" style="background-color: {{ task.color or '#6c5ce7' }};">
+                                                <div class="fw-bold">{{ task.title }}</div>
+                                                {% if task.description %}
+                                                    <small class="d-block text-break" style="white-space: pre-line;">{{ task.description }}</small>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

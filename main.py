@@ -35,11 +35,16 @@ def init_teacher_user():
         new_user = models.User(
             username=teacher_user,
             hashed_password=hash_password(teacher_pass),
-            full_name="Преподаватель",
+            full_name="Фурсова Алина Евгеньевна",
             role="teacher"
         )
         db.add(new_user)
         db.commit()
+    else:
+        # Обновляем имя, если аккаунт уже создан
+        if user.full_name == "Преподаватель":
+            user.full_name = "Фурсова Алина Евгеньевна"
+            db.commit()
     db.close()
 
 @app.on_event("startup")
@@ -79,8 +84,7 @@ async def login(
     if not user or not verify_password(password, user.hashed_password):
         return templates.TemplateResponse(request=request, name="login.html", context={"error": "Неверный логин или пароль"})
 
-    target_url = "/schedule" if user.role == "student" else "/schedule"
-    response = RedirectResponse(url=target_url, status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(url="/schedule", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="user", value=user.username, httponly=True, samesite="lax", max_age=3600 * 24 * 7)
     return response
 
@@ -118,6 +122,7 @@ async def add_lesson(
     title: str = Form(...),
     day: str = Form(...),
     time_slot: str = Form(...),
+    color: str = Form("#70a1ff"),
     db: Session = Depends(get_db)
 ):
     user = get_current_user_from_cookie(request, db)
@@ -125,7 +130,7 @@ async def add_lesson(
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     due_date = f"{day} {time_slot}"
-    new_task = models.Task(title=title.strip(), due_date=due_date, color="#6c5ce7")
+    new_task = models.Task(title=title.strip(), due_date=due_date, color=color)
     db.add(new_task)
     db.commit()
     return RedirectResponse(url="/schedule", status_code=status.HTTP_303_SEE_OTHER)

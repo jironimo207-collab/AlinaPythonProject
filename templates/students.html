@@ -118,7 +118,8 @@
                                     <td>{{ student.contacts or '—' }}</td>
                                     <td>
                                         {% if student.grades %}
-                                            {% set last_grade = student.grades[-1] %}
+                                            {% set sorted_grades = student.grades | sort(attribute='id') %}
+                                            {% set last_grade = sorted_grades[-1] %}
                                             <span class="badge bg-primary grade-badge-clickable px-2 py-1"
                                                   style="background-color: #6c5ce7 !important;"
                                                   data-bs-toggle="modal"
@@ -153,13 +154,13 @@
                                             <div class="modal-body p-0">
                                                 {% if student.grades %}
                                                     <ul class="list-group list-group-flush">
-                                                        {% for grade in student.grades|reverse %}
+                                                        {% for grade in student.grades | sort(attribute='id', reverse=True) %}
                                                             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                                                                 <div>
                                                                     <div class="fw-bold fs-6">{{ grade.score }}/{{ grade.max_score }}</div>
                                                                     <div class="text-muted small">{{ grade.test_name }}</div>
                                                                     <div class="text-muted small" style="font-size: 0.75rem;">
-                                                                        {{ grade.created_at.strftime('%d.%m.%Y') if grade.created_at else '' }}
+                                                                        {{ grade.created_at.strftime('%d.%m.%Y %H:%M') if grade.created_at else '' }}
                                                                     </div>
                                                                 </div>
                                                                 <div>

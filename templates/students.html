@@ -7,25 +7,37 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .sidebar { background-color: #ffffff; border-right: 1px solid #dee2e6; min-height: 100vh; }
-        .brand-logo { font-size: 24px; font-weight: 800; color: #6c5ce7; text-decoration: none; }
+        .brand-logo { font-size: 22px; font-weight: 800; color: #6c5ce7; text-decoration: none; }
+        .sidebar { background-color: #ffffff; border-right: 1px solid #e9ecef; min-height: 100vh; }
+        .nav-link { color: #495057; font-weight: 500; border-radius: 6px; padding: 10px 14px; margin-bottom: 4px; }
+        .nav-link:hover { background-color: #f1f0ff; color: #6c5ce7; }
+        .nav-link.active { background-color: #f1f0ff; color: #6c5ce7; font-weight: 700; border-left: 4px solid #6c5ce7; }
     </style>
 </head>
 <body>
+
 <div class="container-fluid">
     <div class="row">
-        <div class="col-md-3 col-lg-2 sidebar p-3">
-            <a href="/schedule" class="brand-logo d-block mb-3">GL STUDY</a>
-            <nav class="nav flex-column">
-                <a class="nav-link" href="/schedule">Расписание</a>
-                <a class="nav-link active" href="/students">Ученики</a>
-            </nav>
+        <!-- Навигация -->
+        <div class="col-md-3 col-lg-2 sidebar p-3 d-flex flex-column justify-content-between">
+            <div>
+                <a href="/schedule" class="brand-logo d-block mb-4">GL STUDY</a>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if active_page == 'schedule' %}active{% endif %}" href="/schedule">Расписание</a>
+                    <a class="nav-link {% if active_page == 'students' %}active{% endif %}" href="/students">Ученики</a>
+                </nav>
+            </div>
+            <div class="pt-3 border-top mt-auto">
+                <div class="small fw-semibold text-truncate mb-2">👤 {{ user.full_name or user.username }}</div>
+                <a href="/logout" class="btn btn-outline-danger btn-sm w-100">Выйти</a>
+            </div>
         </div>
 
+        <!-- Контент -->
         <div class="col-md-9 col-lg-10 p-3 p-md-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3 class="fw-bold m-0">Список учеников</h3>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">+ Добавить ученика</button>
+                <h4 class="fw-bold m-0">Список учеников</h4>
+                <button class="btn btn-primary" style="background-color: #6c5ce7; border: none;" data-bs-toggle="modal" data-bs-target="#addStudentModal">+ Добавить ученика</button>
             </div>
 
             {% if error %}
@@ -61,72 +73,72 @@
                                     </td>
                                 </tr>
 
-                                <!-- Модалка "Добавить оценку" -->
+                                <!-- Модалка добавления оценки -->
                                 <div class="modal fade" id="addGradeModal{{ student.id }}" tabindex="-1">
                                     <div class="modal-dialog">
-                                        <div class="modal-content">
+                                        <div class="modal-content text-start">
                                             <form action="/students/{{ student.id }}/grades/add" method="POST">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title">Поставить оценку: {{ student.name }}</h5>
+                                                    <h5 class="modal-title fw-bold">Оценка: {{ student.name }}</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <div class="mb-3 text-start">
-                                                        <label class="form-label">Название работы / темы</label>
-                                                        <input type="text" name="test_name" class="form-control" placeholder="Контрольная работа" required>
+                                                    <div class="mb-3">
+                                                        <label class="form-label text-muted">Название работы / темы</label>
+                                                        <input type="text" name="test_name" class="form-control" placeholder="Самостоятельная работа" required>
                                                     </div>
                                                     <div class="row">
-                                                        <div class="col-6 text-start">
-                                                            <label class="form-label">Набранный балл</label>
+                                                        <div class="col-6">
+                                                            <label class="form-label text-muted">Набранный балл</label>
                                                             <input type="number" name="score" class="form-control" placeholder="8" required min="0">
                                                         </div>
-                                                        <div class="col-6 text-start">
-                                                            <label class="form-label">Максимальный балл</label>
+                                                        <div class="col-6">
+                                                            <label class="form-label text-muted">Максимальный балл</label>
                                                             <input type="number" name="max_score" class="form-control" value="10" required min="1">
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                                                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+                                                    <button type="submit" class="btn btn-primary" style="background-color: #6c5ce7; border: none;">Сохранить</button>
                                                 </div>
                                             </form>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Модалка "Изменить ученика" -->
+                                <!-- Модалка изменения -->
                                 <div class="modal fade" id="editStudentModal{{ student.id }}" tabindex="-1">
                                     <div class="modal-dialog">
                                         <div class="modal-content text-start">
                                             <form action="/students/edit/{{ student.id }}" method="POST">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title">Редактировать: {{ student.name }}</h5>
+                                                    <h5 class="modal-title fw-bold">Редактировать: {{ student.name }}</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <div class="modal-body">
                                                     <div class="mb-3">
-                                                        <label class="form-label">ФИО ученика</label>
+                                                        <label class="form-label text-muted">ФИО Ученика</label>
                                                         <input type="text" name="name" class="form-control" value="{{ student.name }}" required>
                                                     </div>
                                                     <div class="row mb-3">
                                                         <div class="col-6">
-                                                            <label class="form-label">Возраст</label>
+                                                            <label class="form-label text-muted">Возраст</label>
                                                             <input type="text" name="age" class="form-control" value="{{ student.age or '' }}">
                                                         </div>
                                                         <div class="col-6">
-                                                            <label class="form-label">Телефон</label>
+                                                            <label class="form-label text-muted">Телефон</label>
                                                             <input type="text" name="contacts" class="form-control" value="{{ student.contacts or '' }}">
                                                         </div>
                                                     </div>
                                                     <div class="mb-3">
-                                                        <label class="form-label">Новый пароль (оставьте пустым, если не нужно менять)</label>
+                                                        <label class="form-label text-muted">Новый пароль (оставьте пустым, если не нужно менять)</label>
                                                         <input type="password" name="password" class="form-control" placeholder="******">
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                                                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+                                                    <button type="submit" class="btn btn-primary" style="background-color: #6c5ce7; border: none;">Сохранить</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -147,44 +159,44 @@
     </div>
 </div>
 
-<!-- Модалка "Новый ученик" -->
+<!-- Модалка создания ученика -->
 <div class="modal fade" id="addStudentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <form action="/students/add" method="POST">
                 <div class="modal-header">
-                    <h5 class="modal-title">Создать аккаунт ученика</h5>
+                    <h5 class="modal-title fw-bold">Создать аккаунт ученика</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">ФИО Ученика *</label>
+                        <label class="form-label text-muted">ФИО Ученика *</label>
                         <input type="text" name="name" class="form-control" required placeholder="Иван Иванов">
                     </div>
                     <div class="row mb-3">
                         <div class="col-6">
-                            <label class="form-label">Логин для входа *</label>
+                            <label class="form-label text-muted">Логин для входа *</label>
                             <input type="text" name="username" class="form-control" required placeholder="ivan2026">
                         </div>
                         <div class="col-6">
-                            <label class="form-label">Пароль *</label>
+                            <label class="form-label text-muted">Пароль *</label>
                             <input type="password" name="password" class="form-control" required placeholder="******">
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-6">
-                            <label class="form-label">Возраст</label>
+                            <label class="form-label text-muted">Возраст</label>
                             <input type="text" name="age" class="form-control" placeholder="14">
                         </div>
                         <div class="col-6">
-                            <label class="form-label">Телефон</label>
+                            <label class="form-label text-muted">Телефон</label>
                             <input type="text" name="contacts" class="form-control" placeholder="+7 707 ...">
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Создать</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary" style="background-color: #6c5ce7; border: none;">Создать</button>
                 </div>
             </form>
         </div>

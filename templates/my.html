@@ -7,39 +7,59 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .brand-logo { font-size: 24px; font-weight: 800; color: #6c5ce7; text-decoration: none; }
+        .brand-logo { font-size: 22px; font-weight: 800; color: #6c5ce7; text-decoration: none; }
+        .sidebar { background-color: #ffffff; border-right: 1px solid #e9ecef; min-height: 100vh; }
+        .nav-link { color: #495057; font-weight: 500; border-radius: 6px; padding: 10px 14px; margin-bottom: 4px; }
+        .nav-link:hover { background-color: #f1f0ff; color: #6c5ce7; }
+        .nav-link.active { background-color: #f1f0ff; color: #6c5ce7; font-weight: 700; border-left: 4px solid #6c5ce7; }
     </style>
 </head>
 <body>
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-        <a href="/my" class="brand-logo">GL STUDY</a>
-        <div class="d-flex align-items-center gap-3">
-            <span class="fw-semibold">👤 {{ student.name }}</span>
-            <a href="/logout" class="btn btn-outline-danger btn-sm">Выйти</a>
-        </div>
-    </div>
 
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white fw-bold py-3">Мои оценки</div>
-        <div class="card-body p-0">
-            {% if student.grades %}
-            <ul class="list-group list-group-flush">
-                {% for grade in student.grades %}
-                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                    <div>
-                        <div class="fw-semibold">{{ grade.test_name }}</div>
-                        <small class="text-muted">{{ grade.created_at.strftime('%d.%m.%Y') }}</small>
-                    </div>
-                    <span class="badge bg-primary fs-6 px-3 py-2">{{ grade.score }} / {{ grade.max_score }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-center text-muted my-4">Оценок пока нет</p>
-            {% endif %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Навигация -->
+        <div class="col-md-3 col-lg-2 sidebar p-3 d-flex flex-column justify-content-between">
+            <div>
+                <a href="/schedule" class="brand-logo d-block mb-4">GL STUDY</a>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if active_page == 'my' %}active{% endif %}" href="/my">Мои оценки</a>
+                    <a class="nav-link {% if active_page == 'schedule' %}active{% endif %}" href="/schedule">Расписание</a>
+                </nav>
+            </div>
+            <div class="pt-3 border-top mt-auto">
+                <div class="small fw-semibold text-truncate mb-2">👤 {{ student.name }}</div>
+                <a href="/logout" class="btn btn-outline-danger btn-sm w-100">Выйти</a>
+            </div>
+        </div>
+
+        <!-- Контент -->
+        <div class="col-md-9 col-lg-10 p-3 p-md-4">
+            <h4 class="fw-bold mb-4">Мои оценки</h4>
+
+            <div class="card border-0 shadow-sm" style="max-width: 600px;">
+                <div class="card-body p-0">
+                    {% if student.grades %}
+                    <ul class="list-group list-group-flush">
+                        {% for grade in student.grades %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <div>
+                                <div class="fw-semibold">{{ grade.test_name }}</div>
+                                <small class="text-muted">{{ grade.created_at.strftime('%d.%m.%Y') }}</small>
+                            </div>
+                            <span class="badge bg-primary fs-6 px-3 py-2" style="background-color: #6c5ce7 !important;">{{ grade.score }} / {{ grade.max_score }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-center text-muted my-4">Оценок пока нет</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

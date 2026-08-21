@@ -7,46 +7,56 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .sidebar { background-color: #ffffff; border-right: 1px solid #dee2e6; }
-        .brand-logo { font-size: 24px; font-weight: 800; color: #6c5ce7; text-decoration: none; }
-        .schedule-table th { background-color: #f1f0ff; text-align: center; }
-        .task-card { background-color: #6c5ce7; border-radius: 8px; padding: 8px; color: #fff; position: relative; font-size: 0.85rem; }
-        .btn-delete { position: absolute; top: 2px; right: 4px; color: #fff; background: none; border: none; font-size: 14px; }
+        .brand-logo { font-size: 22px; font-weight: 800; color: #6c5ce7; text-decoration: none; }
+        .sidebar { background-color: #ffffff; border-right: 1px solid #e9ecef; min-height: 100vh; }
+        .nav-link { color: #495057; font-weight: 500; border-radius: 6px; padding: 10px 14px; margin-bottom: 4px; }
+        .nav-link:hover { background-color: #f1f0ff; color: #6c5ce7; }
+        .nav-link.active { background-color: #f1f0ff; color: #6c5ce7; font-weight: 700; border-left: 4px solid #6c5ce7; }
+        .schedule-table th { background-color: #f1f0ff; text-align: center; font-size: 0.9rem; }
+        .task-card { background-color: #6c5ce7; border-radius: 6px; padding: 6px 8px; color: #fff; position: relative; font-size: 0.85rem; }
+        .btn-delete { position: absolute; top: 2px; right: 4px; color: #fff; background: none; border: none; font-size: 14px; line-height: 1; }
     </style>
 </head>
 <body>
+
 <div class="container-fluid">
     <div class="row">
-        <div class="col-md-3 col-lg-2 sidebar p-3">
-            <a href="/schedule" class="brand-logo d-block mb-3">GL STUDY</a>
-            <nav class="nav flex-column">
-                <a class="nav-link active" href="/schedule">Расписание</a>
-                {% if is_teacher %}
-                <a class="nav-link" href="/students">Ученики</a>
+        <!-- Навигация -->
+        <div class="col-md-3 col-lg-2 sidebar p-3 d-flex flex-column justify-content-between">
+            <div>
+                <a href="/schedule" class="brand-logo d-block mb-4">GL STUDY</a>
+                <nav class="nav flex-column">
+                    {% if is_student %}
+                        <a class="nav-link {% if active_page == 'my' %}active{% endif %}" href="/my">Мои оценки</a>
+                        <a class="nav-link {% if active_page == 'schedule' %}active{% endif %}" href="/schedule">Расписание</a>
+                    {% else %}
+                        <a class="nav-link {% if active_page == 'schedule' %}active{% endif %}" href="/schedule">Расписание</a>
+                        {% if is_teacher %}
+                            <a class="nav-link {% if active_page == 'students' %}active{% endif %}" href="/students">Ученики</a>
+                        {% endif %}
+                    {% endif %}
+                </nav>
+            </div>
+            <div class="pt-3 border-top mt-auto">
+                {% if user %}
+                    <div class="small fw-semibold text-truncate mb-2">👤 {{ user.full_name or user.username }}</div>
+                    <a href="/logout" class="btn btn-outline-danger btn-sm w-100">Выйти</a>
+                {% else %}
+                    <a href="/login" class="btn btn-primary btn-sm w-100" style="background-color: #6c5ce7; border: none;">Войти</a>
                 {% endif %}
-            </nav>
+            </div>
         </div>
 
+        <!-- Контент -->
         <div class="col-md-9 col-lg-10 p-3 p-md-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="fw-bold">Расписание занятий</h4>
-                <div>
-                    {% if is_teacher %}
-                        <span class="me-2 fw-semibold">👤 {{ teacher_name }}</span>
-                        <a href="/logout" class="btn btn-outline-danger btn-sm">Выйти</a>
-                    {% else %}
-                        <a href="/login" class="btn btn-primary btn-sm">Вход</a>
-                    {% endif %}
-                </div>
+                <h4 class="fw-bold m-0">Расписание занятий</h4>
+                {% if is_teacher %}
+                    <button type="button" class="btn btn-primary" style="background-color: #6c5ce7; border: none;" data-bs-toggle="modal" data-bs-target="#addLessonModal">+ Добавить урок</button>
+                {% endif %}
             </div>
 
-            {% if is_teacher %}
-            <div class="mb-3 text-end">
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addLessonModal">+ Добавить занятие</button>
-            </div>
-            {% endif %}
-
-            <div class="table-responsive bg-white rounded shadow-sm">
+            <div class="table-responsive bg-white rounded shadow-sm border">
                 <table class="table table-bordered schedule-table mb-0">
                     <thead>
                         <tr>
@@ -62,10 +72,10 @@
                                 <td class="text-center align-middle fw-bold text-muted bg-light">{{ slot }}</td>
                                 {% for day in days %}
                                     {% set cell_key = day + " " + slot %}
-                                    <td class="align-top" style="height: 80px;">
+                                    <td class="align-top" style="height: 75px;">
                                         {% for task in tasks %}
                                             {% if task.due_date == cell_key %}
-                                                <div class="task-card">
+                                                <div class="task-card mb-1">
                                                     {% if is_teacher %}
                                                         <form action="/schedule/delete/{{ task.id }}" method="POST" class="d-inline">
                                                             <button type="submit" class="btn-delete" onclick="return confirm('Удалить?')">×</button>
@@ -92,17 +102,17 @@
     <div class="modal-content">
       <form action="/schedule/add" method="POST">
         <div class="modal-header">
-          <h5 class="modal-title">Добавить занятие</h5>
+          <h5 class="modal-title fw-bold">Добавить новое занятие</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">Предмет / Название</label>
+            <label class="form-label text-muted">Предмет / Название</label>
             <input type="text" name="title" class="form-control" required placeholder="Математика">
           </div>
           <div class="row mb-3">
             <div class="col-6">
-              <label class="form-label">День</label>
+              <label class="form-label text-muted">День недели</label>
               <select name="day" class="form-select" required>
                 {% for day in days %}
                   <option value="{{ day }}">{{ day }}</option>
@@ -110,7 +120,7 @@
               </select>
             </div>
             <div class="col-6">
-              <label class="form-label">Время</label>
+              <label class="form-label text-muted">Время</label>
               <select name="time_slot" class="form-select" required>
                 {% for slot in time_slots %}
                   <option value="{{ slot }}">{{ slot }}</option>
@@ -120,8 +130,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-          <button type="submit" class="btn btn-primary">Сохранить</button>
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary" style="background-color: #6c5ce7; border: none;">Сохранить</button>
         </div>
       </form>
     </div>

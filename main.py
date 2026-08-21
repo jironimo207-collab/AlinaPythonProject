@@ -25,8 +25,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     except (ValueError, TypeError):
         return False
 
-USERNAME_RE = re.compile(r"^[A-Za-z0-9_.\-]{3,32}$")
-
 def init_teacher_user():
     db = next(get_db())
     teacher_user = os.getenv("TEACHER_USERNAME", "alina")
@@ -81,7 +79,7 @@ async def login(
     if not user or not verify_password(password, user.hashed_password):
         return templates.TemplateResponse(request=request, name="login.html", context={"error": "Неверный логин или пароль"})
 
-    target_url = "/my" if user.role == "student" else "/schedule"
+    target_url = "/schedule" if user.role == "student" else "/schedule"
     response = RedirectResponse(url=target_url, status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="user", value=user.username, httponly=True, samesite="lax", max_age=3600 * 24 * 7)
     return response
@@ -95,10 +93,8 @@ async def logout():
 @app.get("/schedule", response_class=HTMLResponse)
 async def get_schedule(request: Request, db: Session = Depends(get_db)):
     user = get_current_user_from_cookie(request, db)
-    if is_student_user(user):
-        return RedirectResponse(url="/my", status_code=status.HTTP_303_SEE_OTHER)
-
     teacher_mode = is_teacher_user(user)
+    student_mode = is_student_user(user)
     tasks = db.query(models.Task).all()
 
     return templates.TemplateResponse(
@@ -107,7 +103,8 @@ async def get_schedule(request: Request, db: Session = Depends(get_db)):
         context={
             "user": user,
             "is_teacher": teacher_mode,
-            "teacher_name": user.full_name if user else "Гость",
+            "is_student": student_mode,
+            "active_page": "schedule",
             "tasks": tasks,
             "days": DAYS_OF_WEEK,
             "time_slots": TIME_SLOTS,
@@ -145,7 +142,6 @@ async def delete_lesson(task_id: int, request: Request, db: Session = Depends(ge
         db.commit()
     return RedirectResponse(url="/schedule", status_code=status.HTTP_303_SEE_OTHER)
 
-# СТРОГАЯ ЗАЩИТА: ТОЛЬКО УЧИТЕЛЬ ВИДИТ УЧЕНИКОВ
 @app.get("/students", response_class=HTMLResponse)
 async def get_students(request: Request, db: Session = Depends(get_db)):
     user = get_current_user_from_cookie(request, db)
@@ -160,7 +156,14 @@ async def get_students(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request=request,
         name="students.html",
-        context={"students": students, "is_teacher": True, "teacher_name": user.full_name, "error": None}
+        context={
+            "user": user,
+            "students": students,
+            "is_teacher": True,
+            "is_student": False,
+            "active_page": "students",
+            "error": None
+        }
     )
 
 @app.post("/students/add")
@@ -180,7 +183,7 @@ async def add_student(
     name, username = name.strip(), username.strip()
     if db.query(models.User).filter(models.User.username == username).first():
         students = db.query(models.Student).options(joinedload(models.Student.grades), joinedload(models.Student.user_account)).all()
-        return templates.TemplateResponse(request=request, name="students.html", context={"students": students, "is_teacher": True, "teacher_name": user.full_name, "error": "Логин уже занят!"})
+        return templates.TemplateResponse(request=request, name="students.html", context={"user": user, "students": students, "is_teacher": True, "is_student": False, "active_page": "students", "error": "Логин уже занят!"})
 
     new_student = models.Student(name=name, age=age, contacts=contacts)
     db.add(new_student)
@@ -265,4 +268,14 @@ async def my_page(request: Request, db: Session = Depends(get_db)):
         response.delete_cookie("user")
         return response
 
-    return templates.TemplateResponse(request=request, name="my.html", context={"student": student, "days": DAYS_OF_WEEK, "time_slots": TIME_SLOTS})
+    return templates.TemplateResponse(
+        request=request,
+        name="my.html",
+        context={
+            "user": user,
+            "student": student,
+            "is_teacher": False,
+            "is_student": True,
+            "active_page": "my"
+        }
+    )

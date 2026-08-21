@@ -3,241 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Расписание занятий — GL STUDY</title>
+    <title>Ученики — GL STUDY</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .sidebar { min-height: 100vh; background-color: #ffffff; border-right: 1px solid #dee2e6; }
-        .nav-link { color: #495057; font-weight: 500; padding: 12px 20px; border-left: 4px solid transparent; }
-        .nav-link.active { color: #6c5ce7; background-color: #f1f0ff; border-left-color: #6c5ce7; font-weight: 600; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .sidebar { background-color: #ffffff; border-right: 1px solid #dee2e6; min-height: 100vh; }
         .brand-logo { font-size: 24px; font-weight: 800; color: #6c5ce7; text-decoration: none; }
-        .schedule-table th { background-color: #f1f0ff; text-align: center; vertical-align: middle; }
-        .task-card {
-            border-radius: 8px; padding: 8px 12px; color: #ffffff;
-            margin-bottom: 6px; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-            position: relative;
-        }
-        .task-card .btn-delete {
-            position: absolute; top: 4px; right: 6px; color: #fff;
-            background: rgba(0,0,0,0.25); border: none; border-radius: 50%;
-            width: 20px; height: 20px; line-height: 16px; text-align: center;
-            padding: 0; font-size: 12px; cursor: pointer;
-        }
-        .task-card .btn-delete:hover { background: rgba(255,0,0,0.7); }
     </style>
 </head>
 <body>
-
 <div class="container-fluid">
     <div class="row">
-        <!-- Sidebar -->
         <div class="col-md-3 col-lg-2 sidebar p-3">
-            <a href="/schedule" class="brand-logo d-block mb-4 ps-2">GL STUDY</a>
+            <a href="/schedule" class="brand-logo d-block mb-3">GL STUDY</a>
             <nav class="nav flex-column">
-                <a class="nav-link active" href="/schedule">Моё расписание</a>
-                {% if is_teacher %}
-                <a class="nav-link" href="/students">Ученики</a>
-                {% endif %}
+                <a class="nav-link" href="/schedule">Расписание</a>
+                <a class="nav-link active" href="/students">Ученики</a>
             </nav>
         </div>
 
-        <!-- Main Content -->
-        <div class="col-md-9 col-lg-10 p-4">
-
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-                <h3 class="fw-bold mb-0">Расписание занятий</h3>
-                <div>
-                    {% if is_teacher %}
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="fw-semibold text-primary">👤 {{ teacher_name }}</span>
-                            <a href="/logout" class="btn btn-outline-danger btn-sm">Выйти</a>
-                        </div>
-                    {% else %}
-                        <a href="/login" class="btn btn-primary px-4">Вход</a>
-                    {% endif %}
-                </div>
+        <div class="col-md-9 col-lg-10 p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold m-0">Список учеников</h3>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">+ Добавить ученика</button>
             </div>
 
             {% if error %}
             <div class="alert alert-danger">{{ error }}</div>
             {% endif %}
 
-            <!-- Control Bar -->
-            <div class="card p-3 shadow-sm mb-4 border-0">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-1">Преподаватель: <strong>{{ teacher_name }}</strong></h5>
-                        <p class="mb-0 text-muted">
-                            Управление:
-                            {% if is_teacher %}
-                                <span class="badge bg-success">Режим редактирования (Преподаватель)</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Режим просмотра (Ученик)</span>
-                            {% endif %}
-                        </p>
-                    </div>
+            <div class="card border-0 shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Имя ученика</th>
+                                <th>Логин</th>
+                                <th>Возраст</th>
+                                <th>Телефон</th>
+                                <th class="text-end">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if students %}
+                                {% for student in students %}
+                                <tr>
+                                    <td class="fw-bold">{{ student.name }}</td>
+                                    <td><code>{{ student.user_account.username if student.user_account else '—' }}</code></td>
+                                    <td>{{ student.age or '—' }}</td>
+                                    <td>{{ student.contacts or '—' }}</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-success me-1" data-bs-toggle="modal" data-bs-target="#addGradeModal{{ student.id }}">+ Оценка</button>
+                                        <button class="btn btn-sm btn-outline-warning me-1" data-bs-toggle="modal" data-bs-target="#editStudentModal{{ student.id }}">Изменить</button>
+                                        <form action="/students/delete/{{ student.id }}" method="POST" class="d-inline" onsubmit="return confirm('Удалить ученика?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                                        </form>
+                                    </td>
+                                </tr>
 
-                    {% if is_teacher %}
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addLessonModal">
-                            + Добавить занятие
-                        </button>
-                    {% endif %}
+                                <!-- Модалка "Добавить оценку" -->
+                                <div class="modal fade" id="addGradeModal{{ student.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="/students/{{ student.id }}/grades/add" method="POST">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Поставить оценку: {{ student.name }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3 text-start">
+                                                        <label class="form-label">Название работы / темы</label>
+                                                        <input type="text" name="test_name" class="form-control" placeholder="Контрольная работа" required>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-6 text-start">
+                                                            <label class="form-label">Набранный балл</label>
+                                                            <input type="number" name="score" class="form-control" placeholder="8" required min="0">
+                                                        </div>
+                                                        <div class="col-6 text-start">
+                                                            <label class="form-label">Максимальный балл</label>
+                                                            <input type="number" name="max_score" class="form-control" value="10" required min="1">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Модалка "Изменить ученика" -->
+                                <div class="modal fade" id="editStudentModal{{ student.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content text-start">
+                                            <form action="/students/edit/{{ student.id }}" method="POST">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Редактировать: {{ student.name }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">ФИО ученика</label>
+                                                        <input type="text" name="name" class="form-control" value="{{ student.name }}" required>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col-6">
+                                                            <label class="form-label">Возраст</label>
+                                                            <input type="text" name="age" class="form-control" value="{{ student.age or '' }}">
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label class="form-label">Телефон</label>
+                                                            <input type="text" name="contacts" class="form-control" value="{{ student.contacts or '' }}">
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Новый пароль (оставьте пустым, если не нужно менять)</label>
+                                                        <input type="password" name="password" class="form-control" placeholder="******">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">Список учеников пуст</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
-            <!-- Schedule Grid -->
-            <div class="table-responsive bg-white rounded shadow-sm">
-                <table class="table table-bordered schedule-table mb-0">
-                    <thead>
-                        <tr>
-                            <th style="width: 100px;">Время</th>
-                            {% for day in days %}
-                                <th>{{ day }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for slot in time_slots %}
-                            <tr>
-                                <td class="text-center align-middle fw-bold text-muted bg-light">{{ slot }}</td>
-                                {% for day in days %}
-                                    {% set cell_key = day + " " + slot %}
-                                    <td class="align-top" style="min-width: 150px; height: 100px;">
-                                        {% for task in tasks %}
-                                            {% if task.due_date == cell_key %}
-                                                <div class="task-card" style="background-color: {{ task.color or '#6c5ce7' }};">
-                                                    {% if is_teacher %}
-                                                        <form action="/schedule/delete/{{ task.id }}" method="POST" class="d-inline">
-                                                            <button type="submit" class="btn-delete" onclick="return confirm('Удалить занятие?')" title="Удалить">×</button>
-                                                        </form>
-                                                    {% endif %}
-
-                                                    <div class="fw-bold pe-3">{{ task.title }}</div>
-
-                                                    {% if task.description %}
-                                                        <div class="mt-1 opacity-90">
-                                                            <small class="d-block text-break" style="white-space: pre-line;">{{ task.description }}</small>
-                                                        </div>
-                                                    {% endif %}
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </td>
-                                {% endfor %}
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
         </div>
     </div>
 </div>
 
-<!-- Modal -->
-{% if is_teacher %}
-<div class="modal fade" id="addLessonModal" tabindex="-1" aria-labelledby="addLessonModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form action="/schedule/add" method="POST">
-        <div class="modal-header">
-          <h5 class="modal-title" id="addLessonModalLabel">Добавить занятие и оценку</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+<!-- Модалка "Новый ученик" -->
+<div class="modal fade" id="addStudentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/students/add" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Создать аккаунт ученика</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">ФИО Ученика *</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Иван Иванов">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Логин для входа *</label>
+                            <input type="text" name="username" class="form-control" required placeholder="ivan2026">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Пароль *</label>
+                            <input type="password" name="password" class="form-control" required placeholder="******">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Возраст</label>
+                            <input type="text" name="age" class="form-control" placeholder="14">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Телефон</label>
+                            <input type="text" name="contacts" class="form-control" placeholder="+7 707 ...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Предмет / Название занятия</label>
-            <input type="text" id="lessonTitle" name="title" class="form-control" required placeholder="Например: Математика / Python">
-          </div>
-
-          <div class="row mb-3">
-            <div class="col-6">
-              <label class="form-label">День недели</label>
-              <select name="day" class="form-select" required>
-                {% for day in days %}
-                  <option value="{{ day }}">{{ day }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label">Время</label>
-              <select name="time_slot" class="form-select" required>
-                {% for slot in time_slots %}
-                  <option value="{{ slot }}">{{ slot }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-
-          <!-- Select Student -->
-          <div class="mb-3">
-            <label class="form-label">Ученик (для привязки оценки)</label>
-            <select id="studentSelect" name="student_id" class="form-select" onchange="updateDescription()">
-              <option value="">-- Выберите ученика --</option>
-              {% for student in students %}
-                <option value="{{ student.id }}" data-name="{{ student.name }}">{{ student.name }} {% if student.group_name %}({{ student.group_name }}){% endif %}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <!-- Grade and Descriptor -->
-          <div class="row mb-3">
-            <div class="col-4">
-              <label class="form-label">Оценка (0-100)</label>
-              <input type="number" id="gradeInput" name="score" class="form-control" placeholder="100" min="0" max="100" oninput="updateDescription()">
-            </div>
-            <div class="col-8">
-              <label class="form-label">Дескриптор / Критерий</label>
-              <input type="text" id="descriptorInput" name="descriptor" class="form-control" placeholder="Отличная работа на уроке" oninput="updateDescription()">
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Цвет карточки</label>
-            <input type="color" name="color" class="form-control form-control-color w-100" value="#6c5ce7">
-          </div>
-
-          <!-- Auto-generated description -->
-          <div class="mb-3">
-            <label class="form-label">Заметка на карточке расписания</label>
-            <textarea id="descriptionField" name="description" class="form-control" rows="3" placeholder="Заполняется автоматически"></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-          <button type="submit" class="btn btn-primary">Сохранить</button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
-
-<script>
-function updateDescription() {
-    const studentSelect = document.getElementById('studentSelect');
-    const selectedOption = studentSelect.options[studentSelect.selectedIndex];
-    const studentName = selectedOption.getAttribute('data-name') || '';
-
-    const score = document.getElementById('gradeInput').value;
-    const descriptor = document.getElementById('descriptorInput').value;
-
-    let textParts = [];
-
-    if (studentName) {
-        textParts.push("Ученик: " + studentName);
-    }
-    if (score) {
-        textParts.push("Оценка: " + score + "/100");
-    }
-    if (descriptor) {
-        textParts.push("Дескриптор: " + descriptor);
-    }
-
-    document.getElementById('descriptionField').value = textParts.join('\n');
-}
-</script>
-{% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

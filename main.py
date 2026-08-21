@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session, joinedload
-from passlib.context import CryptContext
+import bcrypt
 from database import engine, get_db, Base
 import models
 
@@ -18,24 +18,23 @@ templates = Jinja2Templates(directory="templates")
 DAYS_OF_WEEK = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"]
 
-# --- Хэширование паролей (требуется пакет: pip install "passlib[bcrypt]") ---
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# --- Хэширование паролей (требуется пакет: pip install bcrypt) ---
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
-        return pwd_context.verify(plain_password, hashed_password)
-    except ValueError:
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    except (ValueError, TypeError):
+        # На случай старых записей с паролем не в формате bcrypt-хэша
         return False
 
 
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_.\-]{3,32}$")
 HEX_COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
-
 
 def init_teacher_user():
     db = next(get_db())

@@ -44,6 +44,14 @@
             font-weight: 700;
             border-left: 4px solid #6c5ce7;
         }
+        .grade-badge-clickable {
+            cursor: pointer;
+            transition: transform 0.1s ease, opacity 0.2s ease;
+        }
+        .grade-badge-clickable:hover {
+            opacity: 0.85;
+            transform: scale(1.02);
+        }
     </style>
 </head>
 <body>
@@ -96,6 +104,7 @@
                                 <th>Логин</th>
                                 <th>Возраст</th>
                                 <th>Телефон</th>
+                                <th>Оценка</th>
                                 <th class="text-end">Действия</th>
                             </tr>
                         </thead>
@@ -107,6 +116,23 @@
                                     <td><code>{{ student.user_account.username if student.user_account else '—' }}</code></td>
                                     <td>{{ student.age or '—' }}</td>
                                     <td>{{ student.contacts or '—' }}</td>
+                                    <td>
+                                        {% if student.grades %}
+                                            {% set last_grade = student.grades[-1] %}
+                                            <span class="badge bg-primary grade-badge-clickable px-2 py-1"
+                                                  style="background-color: #6c5ce7 !important;"
+                                                  data-bs-toggle="modal"
+                                                  data-bs-target="#historyModal{{ student.id }}"
+                                                  title="Нажмите, чтобы посмотреть всю историю">
+                                                {{ last_grade.score }}/{{ last_grade.max_score }}
+                                                <span class="ms-1 opacity-75 fw-normal" style="font-size: 0.75rem;">
+                                                    ({{ last_grade.created_at.strftime('%d.%m.%Y') if last_grade.created_at else '' }})
+                                                </span>
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted small">Нет оценок</span>
+                                        {% endif %}
+                                    </td>
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-success me-1" data-bs-toggle="modal" data-bs-target="#addGradeModal{{ student.id }}">+ Оценка</button>
                                         <button class="btn btn-sm btn-outline-warning me-1" data-bs-toggle="modal" data-bs-target="#editStudentModal{{ student.id }}">Изменить</button>
@@ -116,7 +142,41 @@
                                     </td>
                                 </tr>
 
-                                <!-- Модалка добавления оценки -->
+                                <!-- Модальное окно истории оценок -->
+                                <div class="modal fade" id="historyModal{{ student.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content text-start">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title fw-bold">История оценок: {{ student.name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body p-0">
+                                                {% if student.grades %}
+                                                    <ul class="list-group list-group-flush">
+                                                        {% for grade in student.grades|reverse %}
+                                                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                                                <div>
+                                                                    <div class="fw-bold fs-6">{{ grade.score }}/{{ grade.max_score }}</div>
+                                                                    <div class="text-muted small">{{ grade.test_name }}</div>
+                                                                </div>
+                                                                <span class="text-muted small">
+                                                                    {{ grade.created_at.strftime('%d.%m.%Y') if grade.created_at else '' }}
+                                                                </span>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <div class="p-3 text-center text-muted">История оценок пуста</div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Модальное окно добавления оценки -->
                                 <div class="modal fade" id="addGradeModal{{ student.id }}" tabindex="-1">
                                     <div class="modal-dialog">
                                         <div class="modal-content text-start">
@@ -150,7 +210,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Модалка изменения -->
+                                <!-- Модальное окно изменения -->
                                 <div class="modal fade" id="editStudentModal{{ student.id }}" tabindex="-1">
                                     <div class="modal-dialog">
                                         <div class="modal-content text-start">
@@ -191,7 +251,7 @@
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">Список учеников пуст</td>
+                                    <td colspan="6" class="text-center text-muted py-4">Список учеников пуст</td>
                                 </tr>
                             {% endif %}
                         </tbody>
@@ -202,7 +262,7 @@
     </div>
 </div>
 
-<!-- Модалка создания ученика -->
+<!-- Модальное окно создания ученика -->
 <div class="modal fade" id="addStudentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">

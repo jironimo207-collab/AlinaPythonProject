@@ -132,7 +132,9 @@
                         <div class="col-md-4 border-end mb-3 mb-md-0">
                             <span class="text-uppercase text-muted fw-bold small d-block mb-2">Управление</span>
                             {% if is_teacher %}
-                                <button type="button" class="btn btn-lumi btn-sm px-3" data-bs-toggle="modal" data-bs-target="#addLessonModal">+ Добавить урок</button>
+                                <button type="button" class="btn btn-primary btn-sm px-3" style="background-color: #6c5ce7; border: none;" data-bs-toggle="modal" data-bs-target="#addLessonModal">+ Добавить урок</button>
+                            {% else %}
+                                <span class="text-muted small">Просмотр расписания</span>
                             {% endif %}
                         </div>
                         <div class="col-md-8">
@@ -163,16 +165,47 @@
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!--   СЮДА ВСТАВЛЯЕТСЯ ТАБЛИЦА РАСПИСАНИЯ      -->
-            <!-- ========================================== -->
-
+            <div class="table-responsive bg-white rounded shadow-sm border">
+                <table class="table table-bordered schedule-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 80px;">Время</th>
+                            {% for day in days %}
+                                <th style="min-width: 130px;">{{ day }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for slot in time_slots %}
+                            <tr>
+                                <td class="text-center align-middle fw-bold text-muted bg-light">{{ slot }}</td>
+                                {% for day in days %}
+                                    {% set cell_key = day + " " + slot %}
+                                    <td class="align-top" style="height: 75px;">
+                                        {% for task in tasks %}
+                                            {% if task.due_date == cell_key %}
+                                                <div class="task-card mb-1" style="background-color: {{ task.color or '#70a1ff' }};">
+                                                    {% if is_teacher %}
+                                                        <form action="/schedule/delete/{{ task.id }}" method="POST" class="d-inline">
+                                                            <button type="submit" class="btn-delete" onclick="return confirm('Удалить?')">×</button>
+                                                        </form>
+                                                    {% endif %}
+                                                    <div class="fw-bold pe-2">{{ task.title }}</div>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
 {% if is_teacher %}
-<!-- Модальное окно добавления занятия -->
 <div class="modal fade" id="addLessonModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -182,40 +215,25 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          {% if students %}
-          <div class="mb-3">
-            <label class="form-label text-muted">Ученик</label>
-            <select name="student_id" class="form-select">
-                <option value="">Без привязки к ученику</option>
-                {% for student in students %}
-                    <option value="{{ student.id }}">{{ student.name }}</option>
-                {% endfor %}
-            </select>
-          </div>
-          {% endif %}
           <div class="mb-3">
             <label class="form-label text-muted">Предмет / Название</label>
-            <input type="text" name="title" class="form-control" required placeholder="Английский язык">
+            <input type="text" name="title" class="form-control" required placeholder="Математика">
           </div>
           <div class="row mb-3">
             <div class="col-6">
               <label class="form-label text-muted">День недели</label>
               <select name="day" class="form-select" required>
-                  <option value="mon">Понедельник</option>
-                  <option value="tue">Вторник</option>
-                  <option value="wed">Среда</option>
-                  <option value="thu">Четверг</option>
-                  <option value="fri">Пятница</option>
-                  <option value="sat">Суббота</option>
-                  <option value="sun">Воскресенье</option>
+                {% for day in days %}
+                  <option value="{{ day }}">{{ day }}</option>
+                {% endfor %}
               </select>
             </div>
             <div class="col-6">
               <label class="form-label text-muted">Время</label>
               <select name="time_slot" class="form-select" required>
-                  {% for time_slot in time_slots %}
-                      <option value="{{ time_slot }}">{{ time_slot }}</option>
-                  {% endfor %}
+                {% for slot in time_slots %}
+                  <option value="{{ slot }}">{{ slot }}</option>
+                {% endfor %}
               </select>
             </div>
           </div>
@@ -229,14 +247,10 @@
               <option value="#ee5253">🟥 Прогул</option>
             </select>
           </div>
-          <div class="mb-3">
-            <label class="form-label text-muted">Заметка</label>
-            <input type="text" name="note" class="form-control" placeholder="Кабинет 2 / Онлайн">
-          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
-          <button type="submit" class="btn btn-lumi">Сохранить</button>
+          <button type="submit" class="btn btn-primary" style="background-color: #6c5ce7; border: none;">Сохранить</button>
         </div>
       </form>
     </div>

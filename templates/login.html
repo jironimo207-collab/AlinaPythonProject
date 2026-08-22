@@ -6,28 +6,63 @@
     <title>Вход — LUMI English</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #f4f6f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .login-card { background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 380px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .logo { font-size: 26px; font-weight: 800; color: #6c5ce7; text-align: center; margin-bottom: 20px; }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .brand-logo {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff007f 0%, #ffb703 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card-login {
+            border: none;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .btn-lumi {
+            background: linear-gradient(135deg, #ff007f 0%, #ffb703 100%);
+            border: none;
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .btn-lumi:hover {
+            opacity: 0.9;
+            color: #ffffff;
+        }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <div class="logo">LUMI English</div>
-        {% if error %}
-            <div class="alert alert-danger py-2 fs-6">{{ error }}</div>
-        {% endif %}
-        <form action="/login" method="post">
-            <div class="mb-3">
-                <label class="form-label text-muted">Логин</label>
-                <input type="text" name="username" class="form-control" required placeholder="Введите логин">
-            </div>
-            <div class="mb-3">
-                <label class="form-label text-muted">Пароль</label>
-                <input type="password" name="password" class="form-control" required placeholder="Введите пароль">
-            </div>
-            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold" style="background-color: #6c5ce7; border: none;">Войти</button>
-        </form>
+
+<div class="card card-login shadow-sm p-4 bg-white">
+    <div class="text-center mb-4">
+        <div class="brand-logo mb-1">LUMI English</div>
+        <p class="text-muted small">Войдите в свой личный кабинет</p>
     </div>
+
+    {% if error %}
+    <div class="alert alert-danger py-2 small">{{ error }}</div>
+    {% endif %}
+
+    <form action="/login" method="POST">
+        <div class="mb-3">
+            <label class="form-label text-muted small fw-semibold">Логин</label>
+            <input type="text" name="username" class="form-control" required placeholder="Введите логин">
+        </div>
+        <div class="mb-4">
+            <label class="form-label text-muted small fw-semibold">Пароль</label>
+            <input type="password" name="password" class="form-control" required placeholder="******">
+        </div>
+        <button type="submit" class="btn btn-lumi w-100 py-2">Войти</button>
+    </form>
+</div>
+
 </body>
 </html>

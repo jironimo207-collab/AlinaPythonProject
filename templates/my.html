@@ -79,7 +79,7 @@
 
         <!-- Контент -->
         <div class="col-md-9 col-lg-10 p-3 p-md-4">
-            <h4 class="fw-bold mb-4">Успеваемость: {{ student.name }}[cite: 5]</h4>
+            <h4 class="fw-bold mb-4">Успеваемость: {{ student.name }}</h4>
 
             {% if student.grades %}
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
@@ -87,11 +87,11 @@
                 <div class="col">
                     <div class="card border-0 shadow-sm grade-card h-100 p-3">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="fw-bold text-dark m-0">{{ grade.test_name }}</h6>[cite: 5]
-                            <span class="badge bg-dark fs-6">{{ grade.score }}/{{ grade.max_score }}</span>[cite: 5]
+                            <h6 class="fw-bold text-dark m-0">{{ grade.test_name }}</h6>
+                            <span class="badge bg-dark fs-6">{{ grade.score }}/{{ grade.max_score }}</span>
                         </div>
                         <div class="text-muted small mt-auto">
-                            📅 {{ grade.created_at.strftime('%d.%m.%Y') if grade.created_at else '' }}[cite: 5]
+                            📅 {{ grade.created_at.strftime('%d.%m.%Y') if grade.created_at else '' }}
                         </div>
                     </div>
                 </div>

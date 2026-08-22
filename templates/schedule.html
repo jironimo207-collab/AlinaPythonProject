@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Расписание — LUMI English</title>
+    <title>Мои оценки — LUMI English</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -53,39 +53,8 @@
             color: #ffffff;
             font-weight: 600;
         }
-        .btn-lumi:hover {
-            opacity: 0.9;
-            color: #ffffff;
-        }
-        .schedule-table th {
-            background-color: #fff0f6;
-            color: #495057;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-        .task-card {
-            border-radius: 6px;
-            padding: 6px 8px;
-            color: #fff;
-            position: relative;
-            font-size: 0.85rem;
-        }
-        .btn-delete {
-            position: absolute;
-            top: 2px;
-            right: 4px;
-            color: #fff;
-            background: none;
-            border: none;
-            font-size: 14px;
-            line-height: 1;
-        }
-        .color-badge {
-            width: 14px;
-            height: 14px;
-            border-radius: 3px;
-            display: inline-block;
-            margin-right: 8px;
+        .grade-card {
+            border-left: 4px solid #ff007f;
         }
     </style>
 </head>
@@ -98,165 +67,44 @@
             <div>
                 <a href="/schedule" class="brand-logo d-block mb-3 mb-md-4">LUMI English</a>
                 <nav class="nav flex-column mb-3 mb-md-0">
-                    {% if is_student %}
-                        <a class="nav-link {% if active_page == 'my' %}active{% endif %}" href="/my">Мои оценки</a>
-                        <a class="nav-link {% if active_page == 'schedule' %}active{% endif %}" href="/schedule">Расписание</a>
-                    {% else %}
-                        <a class="nav-link {% if active_page == 'schedule' %}active{% endif %}" href="/schedule">Расписание</a>
-                        {% if is_teacher %}
-                            <a class="nav-link {% if active_page == 'students' %}active{% endif %}" href="/students">Ученики</a>
-                        {% endif %}
-                    {% endif %}
+                    <a class="nav-link active" href="/my">Мои оценки</a>
+                    <a class="nav-link" href="/schedule">Расписание</a>
                 </nav>
             </div>
             <div class="pt-3 border-top mt-md-auto">
-                {% if user %}
-                    <div class="small fw-semibold text-truncate mb-2">👤 {{ user.full_name or user.username }}</div>
-                    <a href="/logout" class="btn btn-outline-danger btn-sm w-100">Выйти</a>
-                {% else %}
-                    <a href="/login" class="btn btn-lumi btn-sm w-100">Войти</a>
-                {% endif %}
+                <div class="small fw-semibold text-truncate mb-2">👤 {{ student.name }}</div>
+                <a href="/logout" class="btn btn-outline-danger btn-sm w-100">Выйти</a>
             </div>
         </div>
 
         <!-- Контент -->
         <div class="col-md-9 col-lg-10 p-3 p-md-4">
-            <h5 class="text-muted fw-normal mb-3">
-                Расписание преподавателя: <strong class="text-dark">{{ user.full_name or user.username if user else 'Преподаватель' }}</strong>
-            </h5>
+            <h4 class="fw-bold mb-4">Успеваемость: {{ student.name }}[cite: 5]</h4>
 
-            <!-- Легенда и Управление -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body p-3">
-                    <div class="row align-items-center">
-                        <div class="col-md-4 border-end mb-3 mb-md-0">
-                            <span class="text-uppercase text-muted fw-bold small d-block mb-2">Управление</span>
-                            {% if is_teacher %}
-                                <button type="button" class="btn btn-primary btn-sm px-3" style="background-color: #6c5ce7; border: none;" data-bs-toggle="modal" data-bs-target="#addLessonModal">+ Добавить урок</button>
-                            {% else %}
-                                <span class="text-muted small">Просмотр расписания</span>
-                            {% endif %}
+            {% if student.grades %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                {% for grade in student.grades | sort(attribute='id', reverse=True) %}
+                <div class="col">
+                    <div class="card border-0 shadow-sm grade-card h-100 p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="fw-bold text-dark m-0">{{ grade.test_name }}</h6>[cite: 5]
+                            <span class="badge bg-dark fs-6">{{ grade.score }}/{{ grade.max_score }}</span>[cite: 5]
                         </div>
-                        <div class="col-md-8">
-                            <div class="row g-2 small">
-                                <div class="col-12 col-sm-6 d-flex align-items-center">
-                                    <span class="color-badge" style="background-color: #70a1ff;"></span>
-                                    <span>Текущие занятия</span>
-                                </div>
-                                <div class="col-12 col-sm-6 d-flex align-items-center">
-                                    <span class="color-badge" style="background-color: #ff6b6b;"></span>
-                                    <span>Занятия закончатся в течение недели</span>
-                                </div>
-                                <div class="col-12 col-sm-6 d-flex align-items-center">
-                                    <span class="color-badge" style="background-color: #1dd1a1;"></span>
-                                    <span>Занятия начнутся в ближайшее время</span>
-                                </div>
-                                <div class="col-12 col-sm-6 d-flex align-items-center">
-                                    <span class="color-badge" style="background-color: #fabca1;"></span>
-                                    <span>Нет преподавателя</span>
-                                </div>
-                                <div class="col-12 col-sm-6 d-flex align-items-center">
-                                    <span class="color-badge" style="background-color: #ee5253;"></span>
-                                    <span>Прогул</span>
-                                </div>
-                            </div>
+                        <div class="text-muted small mt-auto">
+                            📅 {{ grade.created_at.strftime('%d.%m.%Y') if grade.created_at else '' }}[cite: 5]
                         </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-
-            <div class="table-responsive bg-white rounded shadow-sm border">
-                <table class="table table-bordered schedule-table mb-0">
-                    <thead>
-                        <tr>
-                            <th style="min-width: 80px;">Время</th>
-                            {% for day in days %}
-                                <th style="min-width: 130px;">{{ day }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for slot in time_slots %}
-                            <tr>
-                                <td class="text-center align-middle fw-bold text-muted bg-light">{{ slot }}</td>
-                                {% for day in days %}
-                                    {% set cell_key = day + " " + slot %}
-                                    <td class="align-top" style="height: 75px;">
-                                        {% for task in tasks %}
-                                            {% if task.due_date == cell_key %}
-                                                <div class="task-card mb-1" style="background-color: {{ task.color or '#70a1ff' }};">
-                                                    {% if is_teacher %}
-                                                        <form action="/schedule/delete/{{ task.id }}" method="POST" class="d-inline">
-                                                            <button type="submit" class="btn-delete" onclick="return confirm('Удалить?')">×</button>
-                                                        </form>
-                                                    {% endif %}
-                                                    <div class="fw-bold pe-2">{{ task.title }}</div>
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </td>
-                                {% endfor %}
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            {% else %}
+            <div class="card border-0 shadow-sm p-4 text-center text-muted">
+                У вас пока нет поставленных оценок.
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
-
-{% if is_teacher %}
-<div class="modal fade" id="addLessonModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form action="/schedule/add" method="POST">
-        <div class="modal-header">
-          <h5 class="modal-title fw-bold">Добавить новое занятие</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label text-muted">Предмет / Название</label>
-            <input type="text" name="title" class="form-control" required placeholder="Математика">
-          </div>
-          <div class="row mb-3">
-            <div class="col-6">
-              <label class="form-label text-muted">День недели</label>
-              <select name="day" class="form-select" required>
-                {% for day in days %}
-                  <option value="{{ day }}">{{ day }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label text-muted">Время</label>
-              <select name="time_slot" class="form-select" required>
-                {% for slot in time_slots %}
-                  <option value="{{ slot }}">{{ slot }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label text-muted">Статус (Цвет)</label>
-            <select name="color" class="form-select" required>
-              <option value="#70a1ff" selected>🟦 Текущие занятия</option>
-              <option value="#ff6b6b">🟥 Занятия закончатся в течение недели</option>
-              <option value="#1dd1a1">🟩 Занятия начнутся в ближайшее время</option>
-              <option value="#fabca1">🟨 Нет преподавателя</option>
-              <option value="#ee5253">🟥 Прогул</option>
-            </select>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
-          <button type="submit" class="btn btn-primary" style="background-color: #6c5ce7; border: none;">Сохранить</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-{% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

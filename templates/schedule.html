@@ -163,48 +163,10 @@
                 </div>
             </div>
 
-            <!-- Таблица расписания -->
-            {% set time_slots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'] %}
-            {% set days = [('Понедельник', 'mon'), ('Вторник', 'tue'), ('Среда', 'wed'), ('Четверг', 'thu'), ('Пятница', 'fri'), ('Суббота', 'sat'), ('Воскресенье', 'sun')] %}
+            <!-- ========================================== -->
+            <!--   СЮДА ВСТАВЛЯЕТСЯ ТАБЛИЦА РАСПИСАНИЯ      -->
+            <!-- ========================================== -->
 
-            <div class="table-responsive bg-white rounded shadow-sm border">
-                <table class="table table-bordered schedule-table mb-0">
-                    <thead>
-                        <tr>
-                            <th style="min-width: 80px;">Время</th>
-                            {% for day_name, day_code in days %}
-                                <th style="min-width: 130px;">{{ day_name }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for time_slot in time_slots %}
-                        <tr>
-                            <td class="text-center align-middle fw-bold text-muted bg-light">{{ time_slot }}</td>
-                            {% for day_name, day_code in days %}
-                                <td class="align-top p-1" style="height: 75px;">
-                                    {% for lesson in schedule %}
-                                        {% if (lesson.day == day_code or lesson.day == day_name) and (lesson.time_slot == time_slot or lesson.time == time_slot) %}
-                                            <div class="task-card mb-1" style="background-color: {{ lesson.color or '#70a1ff' }};">
-                                                <div class="fw-bold">{{ lesson.title or (lesson.student.name if lesson.student else 'Занятие') }}</div>
-                                                {% if lesson.note %}
-                                                    <div class="small opacity-75">{{ lesson.note }}</div>
-                                                {% endif %}
-                                                {% if is_teacher %}
-                                                    <form action="/schedule/delete/{{ lesson.id }}" method="POST" class="d-inline" onsubmit="return confirm('Удалить?')">
-                                                        <button type="submit" class="btn-delete" title="Удалить">&times;</button>
-                                                    </form>
-                                                {% endif %}
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                </td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
         </div>
     </div>
 </div>

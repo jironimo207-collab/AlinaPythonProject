@@ -57,13 +57,35 @@
             opacity: 0.9;
             color: #ffffff;
         }
-        .day-header {
-            background: linear-gradient(135deg, #ff007f 0%, #ffb703 100%);
-            color: white;
-            font-weight: bold;
-            padding: 8px 12px;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
+        .schedule-table th {
+            background-color: #fff0f6;
+            color: #495057;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .task-card {
+            border-radius: 6px;
+            padding: 6px 8px;
+            color: #fff;
+            position: relative;
+            font-size: 0.85rem;
+        }
+        .btn-delete {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            color: #fff;
+            background: none;
+            border: none;
+            font-size: 14px;
+            line-height: 1;
+        }
+        .color-badge {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-right: 8px;
         }
     </style>
 </head>
@@ -99,101 +121,164 @@
 
         <!-- Контент -->
         <div class="col-md-9 col-lg-10 p-3 p-md-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold m-0">Расписание занятий</h4>
-                {% if is_teacher %}
-                    <button class="btn btn-lumi" data-bs-toggle="modal" data-bs-target="#addLessonModal">+ Добавить урок</button>
-                {% endif %}
-            </div>
+            <h5 class="text-muted fw-normal mb-3">
+                Расписание преподавателя: <strong class="text-dark">{{ user.full_name or user.username if user else 'Преподаватель' }}</strong>
+            </h5>
 
-            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
-                {% set days = [('mon', 'Понедельник'), ('tue', 'Вторник'), ('wed', 'Среда'), ('thu', 'Четверг'), ('fri', 'Пятница'), ('sat', 'Суббота'), ('sun', 'Воскресенье')] %}
-                {% for day_code, day_name in days %}
-                <div class="col">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="day-header">{{ day_name }}</div>
-                        <div class="card-body p-2">
-                            {% set day_lessons = schedule | selectattr('day', 'equalto', day_code) | list %}
-                            {% if day_lessons %}
-                                <div class="list-group list-group-flush">
-                                    {% for lesson in day_lessons %}
-                                    <div class="list-group-item px-2 py-2 d-flex justify-content-between align-items-center border-bottom-0 mb-1 rounded bg-light">
-                                        <div>
-                                            <span class="badge bg-dark me-1">{{ lesson.time }}</span>
-                                            <span class="fw-bold text-dark">{{ lesson.student.name if lesson.student else 'Занятие' }}</span>
-                                            {% if lesson.note %}
-                                                <div class="small text-muted">{{ lesson.note }}</div>
-                                            {% endif %}
-                                        </div>
-                                        {% if is_teacher %}
-                                        <div>
-                                            <form action="/schedule/delete/{{ lesson.id }}" method="POST" class="d-inline" onsubmit="return confirm('Удалить?')">
-                                                <button type="submit" class="btn btn-sm text-danger p-0 border-0 fw-bold">✕</button>
-                                            </form>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <div class="text-center text-muted small py-3">Нет уроков</div>
+            <!-- Легенда и Управление -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 border-end mb-3 mb-md-0">
+                            <span class="text-uppercase text-muted fw-bold small d-block mb-2">Управление</span>
+                            {% if is_teacher %}
+                                <button type="button" class="btn btn-lumi btn-sm px-3" data-bs-toggle="modal" data-bs-target="#addLessonModal">+ Добавить урок</button>
                             {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row g-2 small">
+                                <div class="col-12 col-sm-6 d-flex align-items-center">
+                                    <span class="color-badge" style="background-color: #70a1ff;"></span>
+                                    <span>Текущие занятия</span>
+                                </div>
+                                <div class="col-12 col-sm-6 d-flex align-items-center">
+                                    <span class="color-badge" style="background-color: #ff6b6b;"></span>
+                                    <span>Занятия закончатся в течение недели</span>
+                                </div>
+                                <div class="col-12 col-sm-6 d-flex align-items-center">
+                                    <span class="color-badge" style="background-color: #1dd1a1;"></span>
+                                    <span>Занятия начнутся в ближайшее время</span>
+                                </div>
+                                <div class="col-12 col-sm-6 d-flex align-items-center">
+                                    <span class="color-badge" style="background-color: #fabca1;"></span>
+                                    <span>Нет преподавателя</span>
+                                </div>
+                                <div class="col-12 col-sm-6 d-flex align-items-center">
+                                    <span class="color-badge" style="background-color: #ee5253;"></span>
+                                    <span>Прогул</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
+            </div>
+
+            <!-- Таблица расписания -->
+            {% set time_slots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'] %}
+            {% set days = [('Понедельник', 'mon'), ('Вторник', 'tue'), ('Среда', 'wed'), ('Четверг', 'thu'), ('Пятница', 'fri'), ('Суббота', 'sat'), ('Воскресенье', 'sun')] %}
+
+            <div class="table-responsive bg-white rounded shadow-sm border">
+                <table class="table table-bordered schedule-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 80px;">Время</th>
+                            {% for day_name, day_code in days %}
+                                <th style="min-width: 130px;">{{ day_name }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for time_slot in time_slots %}
+                        <tr>
+                            <td class="text-center align-middle fw-bold text-muted bg-light">{{ time_slot }}</td>
+                            {% for day_name, day_code in days %}
+                                <td class="align-top p-1" style="height: 75px;">
+                                    {% for lesson in schedule %}
+                                        {% if (lesson.day == day_code or lesson.day == day_name) and (lesson.time_slot == time_slot or lesson.time == time_slot) %}
+                                            <div class="task-card mb-1" style="background-color: {{ lesson.color or '#70a1ff' }};">
+                                                <div class="fw-bold">{{ lesson.title or (lesson.student.name if lesson.student else 'Занятие') }}</div>
+                                                {% if lesson.note %}
+                                                    <div class="small opacity-75">{{ lesson.note }}</div>
+                                                {% endif %}
+                                                {% if is_teacher %}
+                                                    <form action="/schedule/delete/{{ lesson.id }}" method="POST" class="d-inline" onsubmit="return confirm('Удалить?')">
+                                                        <button type="submit" class="btn-delete" title="Удалить">&times;</button>
+                                                    </form>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
 {% if is_teacher %}
-<!-- Модальное окно добавления урока -->
+<!-- Модальное окно добавления занятия -->
 <div class="modal fade" id="addLessonModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="/schedule/add" method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Добавить урок</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Ученик</label>
-                        <select name="student_id" class="form-select" required>
-                            {% for student in students %}
-                                <option value="{{ student.id }}">{{ student.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted">День недели</label>
-                        <select name="day" class="form-select" required>
-                            <option value="mon">Понедельник</option>
-                            <option value="tue">Вторник</option>
-                            <option value="wed">Среда</option>
-                            <option value="thu">Четверг</option>
-                            <option value="fri">Пятница</option>
-                            <option value="sat">Суббота</option>
-                            <option value="sun">Воскресенье</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Время (например, 15:00)</label>
-                        <input type="text" name="time" class="form-control" placeholder="15:00" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Заметка</label>
-                        <input type="text" name="note" class="form-control" placeholder="Онлайн / Кабинет 2">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-lumi">Добавить</button>
-                </div>
-            </form>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="/schedule/add" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Добавить новое занятие</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
+        <div class="modal-body">
+          {% if students %}
+          <div class="mb-3">
+            <label class="form-label text-muted">Ученик</label>
+            <select name="student_id" class="form-select">
+                <option value="">Без привязки к ученику</option>
+                {% for student in students %}
+                    <option value="{{ student.id }}">{{ student.name }}</option>
+                {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          <div class="mb-3">
+            <label class="form-label text-muted">Предмет / Название</label>
+            <input type="text" name="title" class="form-control" required placeholder="Английский язык">
+          </div>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label text-muted">День недели</label>
+              <select name="day" class="form-select" required>
+                  <option value="mon">Понедельник</option>
+                  <option value="tue">Вторник</option>
+                  <option value="wed">Среда</option>
+                  <option value="thu">Четверг</option>
+                  <option value="fri">Пятница</option>
+                  <option value="sat">Суббота</option>
+                  <option value="sun">Воскресенье</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label text-muted">Время</label>
+              <select name="time_slot" class="form-select" required>
+                  {% for time_slot in time_slots %}
+                      <option value="{{ time_slot }}">{{ time_slot }}</option>
+                  {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted">Статус (Цвет)</label>
+            <select name="color" class="form-select" required>
+              <option value="#70a1ff" selected>🟦 Текущие занятия</option>
+              <option value="#ff6b6b">🟥 Занятия закончатся в течение недели</option>
+              <option value="#1dd1a1">🟩 Занятия начнутся в ближайшее время</option>
+              <option value="#fabca1">🟨 Нет преподавателя</option>
+              <option value="#ee5253">🟥 Прогул</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted">Заметка</label>
+            <input type="text" name="note" class="form-control" placeholder="Кабинет 2 / Онлайн">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-lumi">Сохранить</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 {% endif %}
 

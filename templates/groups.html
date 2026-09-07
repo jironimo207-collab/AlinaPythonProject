@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Группы — LUMI English</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .brand-logo {
+            font-size: 24px; font-weight: 800;
+            background: linear-gradient(135deg, #ff007f 0%, #ffb703 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-decoration: none; display: inline-block;
+        }
+        .sidebar { background-color: #ffffff; border-bottom: 1px solid #e9ecef; }
+        @media (min-width: 768px) { .sidebar { border-right: 1px solid #e9ecef; border-bottom: none; min-height: 100vh; } }
+        .nav-link { color: #495057; font-weight: 500; border-radius: 6px; padding: 10px 14px; margin-bottom: 4px; }
+        .nav-link:hover { background-color: #fff0f6; color: #ff007f; }
+        .nav-link.active { background-color: #fff0f6; color: #ff007f; font-weight: 700; border-left: 4px solid #ff007f; }
+        .btn-lumi { background: linear-gradient(135deg, #ff007f 0%, #ffb703 100%); border: none; color: #ffffff; font-weight: 600; }
+        .btn-lumi:hover { opacity: 0.9; color: #ffffff; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 sidebar p-3 d-flex flex-column justify-content-between">
+            <div>
+                <a href="/schedule" class="brand-logo d-block mb-3 mb-md-4">LUMI English</a>
+                <nav class="nav flex-column mb-3 mb-md-0">
+                    <a class="nav-link" href="/schedule">Расписание</a>
+                    <a class="nav-link" href="/students">Ученики</a>
+                    <a class="nav-link active" href="/groups">Группы</a>
+                </nav>
+            </div>
+            <div class="pt-3 border-top mt-md-auto">
+                {% if user %}
+                    <div class="small fw-semibold text-truncate mb-2">👤 {{ user.full_name or user.username }}</div>
+                    <a href="/logout" class="btn btn-outline-danger btn-sm w-100">Выйти</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-9 col-lg-10 p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold m-0">Список групп</h4>
+                <button class="btn btn-lumi" data-bs-toggle="modal" data-bs-target="#addGroupModal">+ Создать группу</button>
+            </div>
+
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+                {% if groups %}
+                    {% for group in groups %}
+                    <div class="col">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="fw-bold text-dark m-0">{{ group.name }}</h5>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <button class="btn btn-sm btn-outline-primary border-0 p-1" data-bs-toggle="modal" data-bs-target="#editGroupModal{{ group.id }}" title="Редактировать">✏️</button>
+                                        <form action="/groups/delete/{{ group.id }}" method="POST" onsubmit="return confirm('Удалить группу?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger border-0 p-1" title="Удалить">✕</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% if group.description %}
+                                <p class="text-muted small mb-3">{{ group.description }}</p>
+                                {% endif %}
+                                <hr class="text-muted opacity-25">
+                                <h6 class="small fw-bold text-secondary mb-2">Ученики в группе ({{ group.students|length }}):</h6>
+                                {% if group.students %}
+                                    <ul class="list-group list-group-flush small mb-3">
+                                        {% for student in group.students %}
+                                            <li class="list-group-item px-0 py-1 d-flex justify-content-between">
+                                                <span>{{ student.name }}</span>
+                                                <span class="text-muted">{{ student.contacts or '' }}</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="text-muted small fst-italic">В группе пока нет учеников</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Модальное окно редактирования для каждой группы -->
+                    <div class="modal fade" id="editGroupModal{{ group.id }}" tabindex="-1">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <form action="/groups/edit/{{ group.id }}" method="POST">
+                            <div class="modal-header">
+                              <h5 class="modal-title fw-bold">Редактировать группу</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                              <div class="mb-3">
+                                <label class="form-label text-muted">Название группы *</label>
+                                <input type="text" name="name" class="form-control" value="{{ group.name }}" required>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label text-muted">Описание / Уровень</label>
+                                <input type="text" name="description" class="form-control" value="{{ group.description or '' }}">
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label text-muted fw-bold">Ученики в группе:</label>
+                                <div class="border rounded p-3 bg-light" style="max-height: 200px; overflow-y: auto;">
+                                  {% if students %}
+                                    {% for student in students %}
+                                      <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="student_ids" value="{{ student.id }}" id="editStudent{{ group.id }}_{{ student.id }}"
+                                          {% if student in group.students %}checked{% endif %}>
+                                        <label class="form-check-label" for="editStudent{{ group.id }}_{{ student.id }}">
+                                          {{ student.name }} <span class="text-muted small">({{ student.contacts or 'нет тел.' }})</span>
+                                        </label>
+                                      </div>
+                                    {% endfor %}
+                                  {% else %}
+                                    <span class="text-muted small">Список учеников пуст</span>
+                                  {% endif %}
+                                </div>
+                              </div>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+                              <button type="submit" class="btn btn-lumi">Сохранить изменения</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm p-4 text-center text-muted">
+                            Группы еще не созданы. Нажмите «Создать группу», чтобы объединить учеников.
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/groups/add" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Создать новую группу</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Название группы *</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Family and Friends 1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Описание / Уровень</label>
+                        <input type="text" name="description" class="form-control" placeholder="Понедельник, Среда 15:00">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-bold">Выберите учеников из списка:</label>
+                        <div class="border rounded p-3 bg-light" style="max-height: 200px; overflow-y: auto;">
+                            {% if students %}
+                                {% for student in students %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="student_ids" value="{{ student.id }}" id="studentCheck{{ student.id }}">
+                                    <label class="form-check-label" for="studentCheck{{ student.id }}">
+                                        {{ student.name }} <span class="text-muted small">({{ student.contacts or 'нет тел.' }})</span>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted small">Сначала добавьте учеников в разделе «Ученики»</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-lumi">Создать группу</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

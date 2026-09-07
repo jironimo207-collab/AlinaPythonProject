@@ -1,7 +1,15 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Table
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
+
+# Промежуточная таблица для связи учеников и групп (многие ко многим)
+student_groups = Table(
+    "student_groups",
+    Base.metadata,
+    Column("student_id", Integer, ForeignKey("students.id", ondelete="CASCADE"), primary_key=True),
+    Column("group_id", Integer, ForeignKey("groups.id", ondelete="CASCADE"), primary_key=True)
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -34,13 +42,22 @@ class Student(Base):
     name = Column(String, nullable=False)
     age = Column(String, nullable=True)
     contacts = Column(String, nullable=True)
-    group_name = Column(String, nullable=True)
 
     grades = relationship("Grade", back_populates="student", cascade="all, delete-orphan")
     user_account = relationship(
         "User", back_populates="student", uselist=False,
         cascade="all, delete-orphan", single_parent=True
     )
+    groups = relationship("Group", secondary=student_groups, back_populates="students")
+
+class Group(Base):
+    __tablename__ = "groups"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)
+    description = Column(String, nullable=True)
+
+    students = relationship("Student", secondary=student_groups, back_populates="groups")
 
 class Grade(Base):
     __tablename__ = "grades"

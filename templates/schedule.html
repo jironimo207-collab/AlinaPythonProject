@@ -105,6 +105,7 @@
                         <a class="nav-link {% if active_page == 'schedule' %}active{% endif %}" href="/schedule">Расписание</a>
                         {% if is_teacher %}
                             <a class="nav-link {% if active_page == 'students' %}active{% endif %}" href="/students">Ученики</a>
+                            <a class="nav-link {% if active_page == 'groups' %}active{% endif %}" href="/groups">Группы</a>
                         {% endif %}
                     {% endif %}
                 </nav>
@@ -122,7 +123,7 @@
         <!-- Контент -->
         <div class="col-md-9 col-lg-10 p-3 p-md-4">
             <h5 class="text-muted fw-normal mb-3">
-                Расписание преподавателя: <strong class="text-dark">{{ user.full_name or user.username if user else 'Преподаватель' }}</strong>
+                Расписание преподавателя: Фурсова Алина Евгеньевна
             </h5>
 
             <!-- Легенда и Управление -->

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Журнал — LUMI English</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .brand-logo {
+            font-size: 24px; font-weight: 800;
+            background: linear-gradient(135deg, #ff007f 0%, #ffb703 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-decoration: none; display: inline-block;
+        }
+        .sidebar { background-color: #ffffff; border-bottom: 1px solid #e9ecef; }
+        @media (min-width: 768px) { .sidebar { border-right: 1px solid #e9ecef; border-bottom: none; min-height: 100vh; } }
+        .nav-link { color: #495057; font-weight: 500; border-radius: 6px; padding: 10px 14px; margin-bottom: 4px; }
+        .nav-link:hover { background-color: #fff0f6; color: #ff007f; }
+        .nav-link.active { background-color: #fff0f6; color: #ff007f; font-weight: 700; border-left: 4px solid #ff007f; }
+        .btn-lumi { background: linear-gradient(135deg, #ff007f 0%, #ffb703 100%); border: none; color: #ffffff; font-weight: 600; }
+        .btn-lumi:hover { opacity: 0.9; color: #ffffff; }
+        .journal-table { border-collapse: separate; border-spacing: 0; }
+        .journal-table th, .journal-table td { vertical-align: middle; text-align: center; white-space: nowrap; }
+        .journal-table .student-cell {
+            position: sticky; left: 0; z-index: 2; background-color: #ffffff;
+            text-align: left; min-width: 200px; border-right: 1px solid #e9ecef;
+        }
+        .journal-table thead .student-cell { z-index: 3; }
+        .journal-table select { min-width: 74px; }
+        .status-present { background-color: #e7f8ee; }
+        .status-absent { background-color: #fdecec; }
+        .status-late { background-color: #fff6e5; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 sidebar p-3 d-flex flex-column justify-content-between">
+            <div>
+                <a href="/schedule" class="brand-logo d-block mb-3 mb-md-4">LUMI English</a>
+                <nav class="nav flex-column mb-3 mb-md-0">
+                    <a class="nav-link" href="/schedule">Расписание</a>
+                    <a class="nav-link" href="/students">Ученики</a>
+                    <a class="nav-link" href="/groups">Группы</a>
+                    <a class="nav-link active" href="/journal">Журнал</a>
+                </nav>
+            </div>
+            <div class="pt-3 border-top mt-md-auto">
+                {% if user %}
+                    <div class="small fw-semibold text-truncate mb-2">👤 {{ user.full_name or user.username }}</div>
+                    <a href="/logout" class="btn btn-outline-danger btn-sm w-100">Выйти</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-9 col-lg-10 p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <h4 class="fw-bold m-0">Журнал посещаемости{% if group %}: {{ group.name }}{% endif %}</h4>
+                {% if group %}
+                <button class="btn btn-lumi" data-bs-toggle="modal" data-bs-target="#addLessonModal">+ Добавить урок</button>
+                {% endif %}
+            </div>
+
+            {% if groups %}
+            <div class="mb-4 d-flex flex-wrap gap-2">
+                {% for item in groups %}
+                    <a href="/journal/{{ item.id }}"
+                       class="btn btn-sm {% if group and group.id == item.id %}btn-lumi{% else %}btn-outline-secondary{% endif %}">
+                        {{ item.name }}
+                    </a>
+                {% endfor %}
+            </div>
+            {% else %}
+                <div class="card border-0 shadow-sm p-4 text-center text-muted">
+                    Сначала создайте группу в разделе «Группы».
+                </div>
+            {% endif %}
+
+            {% if group %}
+                {% if not group.students %}
+                    <div class="card border-0 shadow-sm p-4 text-center text-muted">
+                        В группе «{{ group.name }}» пока нет учеников.
+                    </div>
+                {% elif not lessons %}
+                    <div class="card border-0 shadow-sm p-4 text-center text-muted">
+                        Уроков ещё нет. Нажмите «Добавить урок», чтобы указать дату и время занятия.
+                    </div>
+                {% else %}
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body table-responsive">
+                            <table class="table table-bordered journal-table align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="student-cell table-light">Ученик</th>
+                                        {% for lesson in lessons %}
+                                        <th>
+                                            <div class="fw-bold">{{ lesson.date }}</div>
+                                            <div class="small text-muted">{{ weekdays.get(lesson.id, '') }}, {{ lesson.time }}</div>
+                                            {% if lesson.topic %}<div class="small text-muted fst-italic">{{ lesson.topic }}</div>{% endif %}
+                                            <form action="/journal/{{ group.id }}/lessons/delete/{{ lesson.id }}" method="POST"
+                                                  onsubmit="return confirm('Удалить урок и все отметки за него?')">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger border-0 p-0 px-1" title="Удалить урок">✕</button>
+                                            </form>
+                                        </th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in students %}
+                                    <tr>
+                                        <td class="student-cell fw-semibold">{{ student.name }}</td>
+                                        {% for lesson in lessons %}
+                                        {% set current = attendance.get((student.id, lesson.id), '') %}
+                                        <td class="{% if current %}status-{{ current }}{% endif %}">
+                                            <form action="/journal/{{ group.id }}/mark" method="POST">
+                                                <input type="hidden" name="lesson_id" value="{{ lesson.id }}">
+                                                <input type="hidden" name="student_id" value="{{ student.id }}">
+                                                <select name="status_value" class="form-select form-select-sm" onchange="this.form.submit()">
+                                                    <option value="" {% if not current %}selected{% endif %}>—</option>
+                                                    {% for value, label in statuses.items() %}
+                                                    <option value="{{ value }}" {% if current == value %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <noscript><button type="submit" class="btn btn-sm btn-link p-0">ок</button></noscript>
+                                            </form>
+                                        </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">
+                        Обозначения: «+» — присутствовал, «н» — отсутствовал, «оп» — опоздал, «—» — отметки нет.
+                    </p>
+                {% endif %}
+            {% elif groups %}
+                <div class="card border-0 shadow-sm p-4 text-center text-muted">
+                    Выберите группу, чтобы открыть её журнал.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if group %}
+<div class="modal fade" id="addLessonModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/journal/{{ group.id }}/lessons/add" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Новый урок — {{ group.name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Дата урока *</label>
+                        <input type="date" name="date" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Время урока *</label>
+                        <input type="time" name="time" class="form-control" list="lessonTimes" required>
+                        <datalist id="lessonTimes">
+                            {% for slot in time_slots %}<option value="{{ slot }}"></option>{% endfor %}
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Тема урока</label>
+                        <input type="text" name="topic" class="form-control" placeholder="Unit 3, Present Simple">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-lumi">Добавить урок</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

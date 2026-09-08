@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import date as date_type
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -434,3 +435,176 @@ async def delete_group(group_id: int, request: Request, db: Session = Depends(ge
         db.delete(group)
         db.commit()
     return RedirectResponse(url="/groups", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# --- ЖУРНАЛ ПОСЕЩАЕМОСТИ ---
+
+ATTENDANCE_STATUSES = {"present": "+", "absent": "н", "late": "оп"}
+
+
+def weekday_name(date_str: str) -> str:
+    try:
+        return DAYS_OF_WEEK[date_type.fromisoformat(date_str).weekday()]
+    except ValueError:
+        return ""
+
+
+@app.get("/journal", response_class=HTMLResponse)
+async def journal_index(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user_from_cookie(request, db)
+    if not is_teacher_user(user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    groups = db.query(models.Group).options(
+        joinedload(models.Group.students),
+        joinedload(models.Group.lessons)
+    ).all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="journal.html",
+        context={
+            "user": user,
+            "groups": groups,
+            "group": None,
+            "lessons": [],
+            "students": [],
+            "attendance": {},
+            "weekdays": {},
+            "statuses": ATTENDANCE_STATUSES,
+            "is_teacher": True,
+            "is_student": False,
+            "active_page": "journal",
+            "days": DAYS_OF_WEEK,
+            "time_slots": TIME_SLOTS,
+            "error": None
+        }
+    )
+
+
+@app.get("/journal/{group_id}", response_class=HTMLResponse)
+async def journal_group(group_id: int, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user_from_cookie(request, db)
+    if not is_teacher_user(user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    groups = db.query(models.Group).all()
+    group = db.query(models.Group).options(
+        joinedload(models.Group.students),
+        joinedload(models.Group.lessons).joinedload(models.Lesson.attendances)
+    ).filter(models.Group.id == group_id).first()
+
+    if not group:
+        return RedirectResponse(url="/journal", status_code=status.HTTP_303_SEE_OTHER)
+
+    lessons = sorted(group.lessons, key=lambda lesson: (lesson.date, lesson.time))
+    attendance = {
+        (record.student_id, record.lesson_id): record.status
+        for lesson in lessons for record in lesson.attendances
+    }
+
+    return templates.TemplateResponse(
+        request=request,
+        name="journal.html",
+        context={
+            "user": user,
+            "groups": groups,
+            "group": group,
+            "lessons": lessons,
+            "students": sorted(group.students, key=lambda student: student.name),
+            "attendance": attendance,
+            "weekdays": {lesson.id: weekday_name(lesson.date) for lesson in lessons},
+            "statuses": ATTENDANCE_STATUSES,
+            "is_teacher": True,
+            "is_student": False,
+            "active_page": "journal",
+            "days": DAYS_OF_WEEK,
+            "time_slots": TIME_SLOTS,
+            "error": None
+        }
+    )
+
+
+@app.post("/journal/{group_id}/lessons/add")
+async def add_journal_lesson(
+        group_id: int,
+        request: Request,
+        date: str = Form(...),
+        time: str = Form(...),
+        topic: str = Form(None),
+        db: Session = Depends(get_db)
+):
+    user = get_current_user_from_cookie(request, db)
+    if not is_teacher_user(user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    group = db.query(models.Group).filter(models.Group.id == group_id).first()
+    if group:
+        date, time = date.strip(), time.strip()
+        existing = db.query(models.Lesson).filter(
+            models.Lesson.group_id == group_id,
+            models.Lesson.date == date,
+            models.Lesson.time == time
+        ).first()
+        if not existing:
+            db.add(models.Lesson(group_id=group_id, date=date, time=time, topic=topic))
+            db.commit()
+
+    return RedirectResponse(url=f"/journal/{group_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@app.post("/journal/{group_id}/lessons/delete/{lesson_id}")
+async def delete_journal_lesson(group_id: int, lesson_id: int, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user_from_cookie(request, db)
+    if not is_teacher_user(user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    lesson = db.query(models.Lesson).filter(
+        models.Lesson.id == lesson_id,
+        models.Lesson.group_id == group_id
+    ).first()
+    if lesson:
+        db.delete(lesson)
+        db.commit()
+
+    return RedirectResponse(url=f"/journal/{group_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@app.post("/journal/{group_id}/mark")
+async def mark_attendance(
+        group_id: int,
+        request: Request,
+        lesson_id: int = Form(...),
+        student_id: int = Form(...),
+        status_value: str = Form(...),
+        db: Session = Depends(get_db)
+):
+    user = get_current_user_from_cookie(request, db)
+    if not is_teacher_user(user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    lesson = db.query(models.Lesson).filter(
+        models.Lesson.id == lesson_id,
+        models.Lesson.group_id == group_id
+    ).first()
+    if not lesson:
+        return RedirectResponse(url=f"/journal/{group_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+    record = db.query(models.Attendance).filter(
+        models.Attendance.lesson_id == lesson_id,
+        models.Attendance.student_id == student_id
+    ).first()
+
+    if status_value not in ATTENDANCE_STATUSES:
+        if record:
+            db.delete(record)
+            db.commit()
+        return RedirectResponse(url=f"/journal/{group_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+    if record:
+        record.status = status_value
+    else:
+        db.add(models.Attendance(lesson_id=lesson_id, student_id=student_id, status=status_value))
+    db.commit()
+
+    return RedirectResponse(url=f"/journal/{group_id}", status_code=status.HTTP_303_SEE_OTHER)

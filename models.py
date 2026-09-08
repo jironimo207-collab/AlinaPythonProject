@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Table, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -44,6 +44,7 @@ class Student(Base):
     contacts = Column(String, nullable=True)
 
     grades = relationship("Grade", back_populates="student", cascade="all, delete-orphan")
+    attendances = relationship("Attendance", back_populates="student", cascade="all, delete-orphan")
     user_account = relationship(
         "User", back_populates="student", uselist=False,
         cascade="all, delete-orphan", single_parent=True
@@ -58,6 +59,35 @@ class Group(Base):
     description = Column(String, nullable=True)
 
     students = relationship("Student", secondary=student_groups, back_populates="groups")
+    lessons = relationship(
+        "Lesson", back_populates="group",
+        cascade="all, delete-orphan", order_by="Lesson.date, Lesson.time"
+    )
+
+class Lesson(Base):
+    __tablename__ = "lessons"
+    __table_args__ = (UniqueConstraint("group_id", "date", "time", name="uq_lesson_group_date_time"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False)
+    date = Column(String, nullable=False)  # ГГГГ-ММ-ДД
+    time = Column(String, nullable=False)  # ЧЧ:ММ
+    topic = Column(String, nullable=True)
+
+    group = relationship("Group", back_populates="lessons")
+    attendances = relationship("Attendance", back_populates="lesson", cascade="all, delete-orphan")
+
+class Attendance(Base):
+    __tablename__ = "attendances"
+    __table_args__ = (UniqueConstraint("lesson_id", "student_id", name="uq_attendance_lesson_student"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    lesson_id = Column(Integer, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False)
+    student_id = Column(Integer, ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
+    status = Column(String, nullable=False, default="present")  # present / absent / late
+
+    lesson = relationship("Lesson", back_populates="attendances")
+    student = relationship("Student", back_populates="attendances")
 
 class Grade(Base):
     __tablename__ = "grades"

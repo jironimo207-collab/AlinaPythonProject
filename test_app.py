@@ -90,18 +90,38 @@ def test_full_lumi_app_workflow(driver):
     assert student_name in driver.page_source
 
     # Редактирование ученика
-    edit_student_btns = driver.find_elements(By.CSS_SELECTOR,
-                                             "a.btn-warning, a.btn-outline-warning, button.btn-warning, a[href*='edit']")
+    # 1. Кликаем по кнопке "Изменить" последнего студента в списке
+    edit_student_btns = driver.find_elements(
+        By.CSS_SELECTOR,
+        "a.btn-warning, a.btn-outline-warning, button.btn-warning, button.btn-outline-warning"
+    )
+
     if edit_student_btns:
-        edit_student_btns[-1].click()
-        time.sleep(0.5)
-        updated_student_name = f"Измененный Ученик {unique_suffix}"
-        name_edit_input = wait.until(EC.visibility_of_element_located((By.NAME, "name")))
+        # Берем последнюю кнопку из списка
+        target_btn = edit_student_btns[-1]
+
+        # Извлекаем ID модального окна (например, "#editStudentModal5")
+        modal_id = target_btn.get_attribute("data-bs-target")
+        target_btn.click()
+
+        # 2. Ждем, пока поле ввода станет видимым именно внутри нужного модального окна
+        # Это гарантирует, что мы не перепутаем поля, если открыто несколько форм
+        name_edit_input = wait.until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, f"{modal_id} [name='name']"))
+        )
         name_edit_input.clear()
+
+        updated_student_name = f"Измененный Ученик {unique_suffix}"
         name_edit_input.send_keys(updated_student_name)
-        driver.find_element(By.CSS_SELECTOR, "form button[type='submit'], .modal.show button[type='submit']").click()
-        time.sleep(1)
-        assert updated_student_name in driver.page_source
+
+        # 3. НАЖАТИЕ НА КНОПКУ "СОХРАНИТЬ" ВНУТРИ МОДАЛКИ (Рефакторинг XPath)
+        # Ищем кнопку отправки формы именно внутри текущего модального окна
+        submit_button = driver.find_element(By.CSS_SELECTOR, f"{modal_id} button[type='submit']")
+        submit_button.click()
+
+        # 4. Ждем, пока модальное окно закроется и текст обновится на странице
+        wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, "body"), updated_student_name))
+
         student_name = updated_student_name
 
     # Удаление ученика
@@ -133,18 +153,30 @@ def test_full_lumi_app_workflow(driver):
     assert group_name in driver.page_source
 
     # Редактирование группы
-    edit_group_btns = driver.find_elements(By.CSS_SELECTOR,
-                                           "a.btn-warning, a.btn-outline-warning, button.btn-warning, a[href*='edit']")
+    # 1. Находим кнопку редактирования именно по эмодзи карандаша или тексту рядом
+    # Ищем элемент, который содержит "✏"
+    edit_group_btns = driver.find_elements(By.XPATH, "//*[contains(text(), '✏')]")
+
     if edit_group_btns:
+        # Кликаем по последнему карандашу в списке
         edit_group_btns[-1].click()
-        time.sleep(0.5)
-        updated_group_name = f"Pro Group {unique_suffix}"
+
+        # 2. Ждем, пока поле ввода станет доступным и очищаем его
         group_edit_input = wait.until(EC.visibility_of_element_located((By.NAME, "name")))
         group_edit_input.clear()
+
+        updated_group_name = f"Pro Group {unique_suffix}"
         group_edit_input.send_keys(updated_group_name)
-        driver.find_element(By.CSS_SELECTOR, "form button[type='submit'], .modal.show button[type='submit']").click()
-        time.sleep(1)
-        assert updated_group_name in driver.page_source
+
+        # 3. НАЖАТИЕ НА КНОПКУ "СОХРАНИТЬ ИЗМЕНЕНИЯ"
+        # В шаблоне эта кнопка называется именно "Сохранить изменения"
+        submit_button = wait.until(
+            EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Сохранить изменения')]")))
+        submit_button.click()
+
+        # 4. Ждем, пока старое имя ("ывс") исчезнет ИЛИ новое имя появится в заголовке h5
+        wait.until(EC.visibility_of_element_located((By.XPATH, f"//h5[contains(text(), '{updated_group_name}')]")))
+
         group_name = updated_group_name
 
     # Удаление группы

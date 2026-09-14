@@ -324,28 +324,19 @@
 </div>
 
 <!-- Модальное окно создания ученика -->
+<!-- Модальное окно создания ученика -->
 <div class="modal fade" id="addStudentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <form action="/students/add" method="POST">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Создать аккаунт ученика</h5>
+                    <h5 class="modal-title fw-bold">Добавить ученика</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label text-muted">ФИО Ученика *</label>
                         <input type="text" name="name" class="form-control" required placeholder="Иван Иванов">
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <label class="form-label text-muted">Логин для входа *</label>
-                            <input type="text" name="username" class="form-control" required placeholder="ivan2026">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label text-muted">Пароль *</label>
-                            <input type="password" name="password" class="form-control" required placeholder="******">
-                        </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-6">
@@ -360,7 +351,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-lumi">Создать</button>
+                    <button type="submit" class="btn btn-lumi">Добавить</button>
                 </div>
             </form>
         </div>

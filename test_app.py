@@ -77,8 +77,6 @@ def test_full_lumi_app_workflow(driver):
     driver.find_element(By.CSS_SELECTOR, "button[data-bs-target='#addStudentModal']").click()
     time.sleep(0.5)
     wait.until(EC.visibility_of_element_located((By.NAME, "name"))).send_keys(student_name)
-    driver.find_element(By.NAME, "username").send_keys(student_username)
-    driver.find_element(By.NAME, "password").send_keys("studentpass123")
     driver.find_element(By.NAME, "age").send_keys("15")
     driver.find_element(By.NAME, "contacts").send_keys("+77771234567")
     driver.find_element(By.CSS_SELECTOR, "#addStudentModal button[type='submit']").click()

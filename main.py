@@ -192,8 +192,8 @@ async def get_students(request: Request, db: Session = Depends(get_db)):
 async def add_student(
         request: Request,
         name: str = Form(...),
-        username: str = Form(...),
-        password: str = Form(...),
+        username: str = Form(None),
+        password: str = Form(None),
         age: str = Form(None),
         contacts: str = Form(None),
         db: Session = Depends(get_db)
@@ -202,27 +202,34 @@ async def add_student(
     if not is_teacher_user(user):
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
-    name, username = name.strip(), username.strip()
-    if db.query(models.User).filter(models.User.username == username).first():
-        students = db.query(models.Student).options(joinedload(models.Student.grades),
-                                                    joinedload(models.Student.user_account)).all()
-        return templates.TemplateResponse(request=request, name="students.html",
-                                          context={"user": user, "students": students, "is_teacher": True,
-                                                   "is_student": False, "active_page": "students",
-                                                   "error": "Логин уже занят!"})
+    name = name.strip()
+
+    # Проверка на занятость логина, если он передан
+    if username and username.strip():
+        username = username.strip()
+        if db.query(models.User).filter(models.User.username == username).first():
+            students = db.query(models.Student).options(joinedload(models.Student.grades),
+                                                        joinedload(models.Student.user_account)).all()
+            return templates.TemplateResponse(request=request, name="students.html",
+                                              context={"user": user, "students": students, "is_teacher": True,
+                                                       "is_student": False, "active_page": "students",
+                                                       "error": "Логин уже занят!"})
 
     new_student = models.Student(name=name, age=age, contacts=contacts)
     db.add(new_student)
     db.flush()
 
-    new_account = models.User(
-        username=username,
-        hashed_password=hash_password(password),
-        full_name=name,
-        role="student",
-        student_id=new_student.id
-    )
-    db.add(new_account)
+    # Создаем аккаунт только если заполнены логин и пароль
+    if username and password and username.strip() and password.strip():
+        new_account = models.User(
+            username=username.strip(),
+            hashed_password=hash_password(password.strip()),
+            full_name=name,
+            role="student",
+            student_id=new_student.id
+        )
+        db.add(new_account)
+
     db.commit()
     return RedirectResponse(url="/students", status_code=status.HTTP_303_SEE_OTHER)
 

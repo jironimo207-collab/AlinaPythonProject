@@ -9,3 +9,5 @@ itsdangerous
 python-multipart
 starlette<0.36.0
 bcrypt
+psycopg[binary]
+psycopg2-binary
